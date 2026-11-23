@@ -47,12 +47,14 @@ Sonnet, the first turn, 2026-11-23 (each run a throwaway home against the live s
 | the portal's earlier paste, which stops before opening the session | 27 of 30 |
 | this paste, which also opens the session | 15 of 20 |
 | this paste with two sentences of step 5 removed | 12 of 20 |
+| this paste, on Opus | 20 of 20 (24 of 24 with earlier runs) |
 
 Every run that stopped named the same thing: the product's own design, in which Krista's
 server sends Claude her current skills and rules at the start of every session. Some named the
 vercel.app address as one it could not vouch for. Of five that stopped, two carried on when the
 student said yes and three refused again, so a stop is not always one "yes" away. Opus went
-straight through in every run (4 of 4).
+straight through in every run, so the portal tells students to choose Opus before they paste
+(Jerry, 2026-11-23).
 
 ## Checks
 
