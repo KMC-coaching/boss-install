@@ -18,9 +18,16 @@ jobs:
       matrix:
         os: [windows-latest, windows-2022]
     steps:
-      - name: Take Git off PATH, as on a computer that never had it
+      - name: Remove Git, so this is a computer that never had it
         shell: pwsh
         run: |
+          # Runners come with Git for every user. Uninstall it (its own uninstaller, silent),
+          # or an installer only updates that copy and proves nothing about a per-user one.
+          foreach ($u in @("$env:ProgramFiles\Git\unins000.exe", "${env:ProgramFiles(x86)}\Git\unins000.exe")) {
+            if (Test-Path $u) { $p = Start-Process $u -ArgumentList '/VERYSILENT','/NORESTART','/SUPPRESSMSGBOXES' -Wait -PassThru; Write-Output "uninstalled $u ($($p.ExitCode))" }
+          }
+          Start-Sleep -Seconds 5
+          if (Test-Path "$env:ProgramFiles\Git\bin\bash.exe") { Write-Error "Git is still installed"; exit 1 }
           $keep = ($env:PATH -split ';') | Where-Object { $_ -and ($_ -notmatch '\\Git\\') }
           "PATH=$($keep -join ';')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
       - name: Install Git for this user only, the way the paste says
