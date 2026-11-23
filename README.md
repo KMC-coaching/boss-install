@@ -56,6 +56,20 @@ student said yes and three refused again, so a stop is not always one "yes" away
 straight through in every run, so the portal tells students to choose Opus before they paste
 (Jerry, 2026-11-23).
 
+## Windows
+
+BOSS's own automation runs through Git's `bash`, so on Windows Git for Windows has to be
+there before the install, not just for it. The paste's step 0 installs it the normal,
+system-wide way: Claude looks for Git in `C:\Program Files\Git` by itself (code.claude.com
+troubleshooting docs), so the Set up my BOSS session it opens finds Git without a restart. A
+per-user install would land where Claude does not look. Windows asks once whether to allow
+it, and the paste has Claude tell the student to click Yes. `windows-no-git` uninstalls the
+runner's Git and installs it again exactly as the paste says, on Windows with and without
+winget, then runs `kmc` with it. Opus went straight through 10 of 10 with step 0 in the paste.
+
+What is not proven here: Claude itself on Windows. The runners have no Claude, so the
+steps Claude takes are proved one by one, and the whole run still wants a real Windows laptop.
+
 ## Checks
 
 `fresh-machine` runs on every push and daily, on fresh Mac, Windows and Linux machines:

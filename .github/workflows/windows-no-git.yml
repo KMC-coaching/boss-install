@@ -30,7 +30,7 @@ jobs:
           if (Test-Path "$env:ProgramFiles\Git\bin\bash.exe") { Write-Error "Git is still installed"; exit 1 }
           $keep = ($env:PATH -split ';') | Where-Object { $_ -and ($_ -notmatch '\\Git\\') }
           "PATH=$($keep -join ';')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-      - name: Install Git for this user only, the way the paste says
+      - name: Install Git the way the paste says
         shell: pwsh
         run: |
           if (Get-Command git -ErrorAction SilentlyContinue) { Write-Error "Git is still on PATH"; exit 1 }
@@ -38,27 +38,28 @@ jobs:
           Write-Output "winget: $([bool]$winget)"
           $dest = Join-Path $env:LOCALAPPDATA "Programs\Git"
           if ($winget) {
-            winget install --id Git.Git -e --scope user --silent --accept-package-agreements --accept-source-agreements --disable-interactivity
+            # Exactly the paste's command: system-wide, because Claude looks for Git in Program
+            # Files by itself, so a session opened after this finds it without a restart.
+            winget install --id Git.Git -e --silent --accept-package-agreements --accept-source-agreements --disable-interactivity
             Write-Output "winget exit: $LASTEXITCODE"
           }
           if (-not (Test-Path "$dest\bin\bash.exe")) {
-            # No winget (older Windows), or winget would not do a per-user install: Git's own
-            # installer, per user, silent. The newest release, from Git for Windows itself.
+            # No winget (older Windows): Git's own installer, silent, the newest release from
+            # Git for Windows itself.
             $rel = Invoke-RestMethod "https://api.github.com/repos/git-for-windows/git/releases/latest"
             $asset = $rel.assets | Where-Object { $_.name -match '^Git-.*-64-bit\.exe$' } | Select-Object -First 1
             Write-Output "installer: $($asset.name)"
             $exe = Join-Path $env:TEMP $asset.name
             curl.exe -fsSL -o $exe $asset.browser_download_url
-            $p = Start-Process $exe -ArgumentList '/VERYSILENT','/NORESTART','/CURRENTUSER','/SUPPRESSMSGBOXES' -Wait -PassThru
+            $p = Start-Process $exe -ArgumentList '/VERYSILENT','/NORESTART','/SUPPRESSMSGBOXES' -Wait -PassThru
             Write-Output "installer exit: $($p.ExitCode)"
           }
-          # Where it went: per user on a student's laptop; a runner works as an administrator, so
-          # the installer may choose Program Files. kmc.ps1 looks in both, in that order.
-          $found = @("$dest\bin\bash.exe", "$env:ProgramFiles\Git\bin\bash.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
+          # It must land in Program Files: that is where Claude looks for Git first.
+          $found = @("$env:ProgramFiles\Git\bin\bash.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
           if (-not $found) {
             $hit = Get-ChildItem -Path $env:LOCALAPPDATA, $env:ProgramFiles -Filter bash.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 3
             Write-Output "bash.exe found at: $($hit.FullName -join '; ')"
-            Write-Error "Git's bash is in neither place kmc.ps1 looks"; exit 1
+            Write-Error "Git's bash is not in Program Files, where Claude looks for it"; exit 1
           }
           Write-Output "Git's bash: $found"
           "GITBASH=$found" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8

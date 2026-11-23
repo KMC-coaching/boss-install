@@ -150,6 +150,12 @@ jobs:
           need "curl -fsSL"
           need "set up my OS"
           need "If you can't, tell me the folder's full path"
+          # Windows without Git: BOSS needs Git's bash, and Claude finds Git in Program Files
+          # by itself, so it is installed there (windows-no-git.yml proves it).
+          need "On Windows only: if Git for Windows is not installed, install it for me first"
+          need "winget install --id Git.Git -e --silent"
+          need "use Git's bash.exe for every bash step below"
+          need "tell me to click Yes"
           exit $FAIL
 
       - name: Nothing in the paste sends her to GitHub, Terminal or her password
@@ -165,5 +171,6 @@ jobs:
         run: |
           # Longer pastes were stopped more often in testing (README). A new step has to earn it,
           # and what Claude tells the student along the way belongs in kmc's own output instead.
+          # 400 since the Windows Git step (Opus went straight through 10 of 10 with it).
           W=$(wc -w < "$PROMPT"); echo "$W words"
-          [ "$W" -le 350 ] || { echo "::error::the paste grew to $W words"; exit 1; }
+          [ "$W" -le 400 ] || { echo "::error::the paste grew to $W words"; exit 1; }
