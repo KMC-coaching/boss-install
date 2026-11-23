@@ -1,1 +1,1 @@
-set up my computer
+install my BOSS

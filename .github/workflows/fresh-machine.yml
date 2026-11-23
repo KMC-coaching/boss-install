@@ -8,6 +8,10 @@ name: fresh-machine
 on:
   push:
   workflow_dispatch:
+  # kmc and Krista's server change without a push here, so a broken first run would otherwise
+  # wait for the next edit to this repo to show up.
+  schedule:
+    - cron: "17 12 * * *"
 
 env:
   SKILL: plugins/boss-install/skills/install-my-boss/SKILL.md
@@ -66,6 +70,34 @@ jobs:
           [ "$AGAIN" = 4 ] || { echo "::error::kmc from .claude/scripts answered exit $AGAIN"; exit 1; }
           echo "kmc runs on $RUNNER_OS from an empty folder, and asks for a sign-in"
 
+      - name: From PowerShell on Windows, the way a student's Claude may run it
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # The skill: curl.exe (plain curl is something else in PowerShell), and Git's own bash
+          # found beside git.exe, then Program Files, then the per-user place; never a bare
+          # bash, which on Windows can be WSL's.
+          $folder = Join-Path $env:RUNNER_TEMP "ps-student\Sites\BOSS-OS"
+          New-Item -ItemType Directory -Force -Path $folder | Out-Null
+          Set-Location $folder
+          curl.exe -fsSL -o kmc $env:KMC_URL
+          if ($LASTEXITCODE -ne 0) { Write-Error "curl.exe could not fetch kmc"; exit 1 }
+          $bash = $null
+          $git = Get-Command git -ErrorAction SilentlyContinue
+          if ($git) { $c = Join-Path (Split-Path (Split-Path $git.Source -Parent) -Parent) "bin\bash.exe"; if (Test-Path $c) { $bash = $c } }
+          foreach ($c in @("$env:ProgramFiles\Git\bin\bash.exe", "$env:LOCALAPPDATA\Programs\Git\bin\bash.exe")) { if (-not $bash -and (Test-Path $c)) { $bash = $c } }
+          if (-not $bash) { Write-Error "no Git bash found the way the skill looks for it"; exit 1 }
+          Write-Output "Git's bash: $bash"
+          $env:KMCOS_HOME = Join-Path $env:RUNNER_TEMP "ps-student\.kmc-os"
+          $out = & $bash kmc whoami 2>&1
+          $code = $LASTEXITCODE
+          Write-Output $out
+          if ($code -ne 4) { Write-Error "expected 'not signed in' (exit 4), got exit $code"; exit 1 }
+          if (-not (Test-Path ".claude\scripts\kmc")) { Write-Error "kmc did not move itself into place"; exit 1 }
+          & $bash .claude/scripts/kmc whoami *> $null
+          if ($LASTEXITCODE -ne 4) { Write-Error "kmc from .claude/scripts answered exit $LASTEXITCODE"; exit 1 }
+          Write-Output "kmc runs from PowerShell through Git's bash, with a path that has a space in it"
+
       - name: Manifests must be valid on every platform
         shell: bash
         run: |
@@ -97,7 +129,7 @@ jobs:
           FAIL=0
           if grep -nE 'gh auth|GitHub\.cli|cli/cli/releases|github\.com/login/device|/get-boss|Bash\(gh:' "$SKILL"; then
             echo "::error::the GitHub sign-in or the form is back in the skill"; FAIL=1; fi
-          grep -q 'Never use GitHub, a GitHub account, a form or an invitation' "$SKILL" \
+          grep -q 'Never ask her to make or sign in to a GitHub account' "$SKILL" \
             || { echo "::error::the no-GitHub rule was removed"; FAIL=1; }
           exit $FAIL
 
@@ -105,16 +137,28 @@ jobs:
         run: |
           # A ```bash block gets a Run button in the desktop app. The folder path is shown in
           # a fenced block so it gets a COPY button; tagging it makes it something to Run.
-          if grep -nE '^\s*```(bash|sh|shell|console|powershell)\s*$' "$SKILL"; then
+          # Fences inside a blockquote ("> ```") count too: the path block is one.
+          if grep -nE '^\s*(>\s*)?```(bash|sh|shell|console|powershell|pwsh)\s*$' "$SKILL"; then
             echo "::error::a language-tagged fence exists; it would render a Run button"; exit 1; fi
           grep -q 'Never tag that block' "$SKILL" || { echo "::error::the untagged-path rule was removed"; exit 1; }
 
       - name: The handoff opens her folder, in place, and runs the setup there
         run: |
           FAIL=0
-          grep -q 'use_worktree: false' "$SKILL" || { echo "::error::the handoff no longer keeps her folder in place"; FAIL=1; }
-          grep -q '`set up my OS`' "$SKILL" || { echo "::error::the handoff no longer starts set up my OS"; FAIL=1; }
+          # Every value start_session needs to actually start, rather than show a card that waits.
+          for want in '`initiation`: `"user_asked"`' '`context`: `"fresh"`' '`use_worktree`: `false`' \
+                      '`prompt`: `"set up my OS"`' '`title`: `"Set up my BOSS"`' '`background`: `"' '`cwd`:'; do
+            grep -qF "$want" "$SKILL" || { echo "::error::the start_session call lost $want"; FAIL=1; }
+          done
           grep -q 'Never start her setup in this session' "$SKILL" || { echo "::error::the stop-here rule was removed"; FAIL=1; }
+          grep -q 'never for this one' "$SKILL" || { echo "::error::kmc install's 'Next: run setup' line is no longer handled"; FAIL=1; }
+          exit $FAIL
+
+      - name: A Mac's stand-in git is never run
+        run: |
+          FAIL=0
+          grep -q "Never run a Mac's \`git\` before \`xcode-select -p\` answers" "$SKILL" || { echo "::error::the Mac stand-in rule was removed"; FAIL=1; }
+          if grep -nE 'Poll until `git --version`' "$SKILL"; then echo "::error::polling git on a Mac reopens Apple's installer"; FAIL=1; fi
           exit $FAIL
 
       - name: Nobody is routed to office hours, a coach or the academy

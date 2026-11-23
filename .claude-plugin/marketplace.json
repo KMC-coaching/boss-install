@@ -1,6 +1,6 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "kmc",
+  "name": "kmc-install",
   "description": "Krista Mashore Coaching - installs a student's BOSS operating system on their computer.",
   "owner": {
     "name": "Krista Mashore Coaching"
