@@ -1,72 +1,52 @@
 # BOSS Install
 
 **One paste installs a student's BOSS operating system** (the Agent Authority Operating
-System) on their computer: no GitHub account, no form, no invitation.
+System) on their computer, and opens their setup: no GitHub account, no form, no invitation,
+no second paste.
 
-It is the successor to [`boss-pre-setup`](https://github.com/KMC-coaching/boss-pre-setup),
-which got a computer ready, signed the student in to GitHub, and handed them a form so they
-could be invited to a private repository. That repository is no longer how the system
-arrives. The system now comes from Krista Mashore's server, and the student signs in to it
-with the email address they bought with. `boss-pre-setup` is left exactly as it was, for
-anyone partway through the older install.
+[`install-prompt.txt`](install-prompt.txt) is the paste, word for word. It is the single
+source: the BOSS portal shows this exact text in its Copy box, and the checks here guard it.
+The student pastes it into Claude (the desktop app, Code tab, a new Local session). Claude
+then:
 
-It is public for one reason: a student has to be able to fetch it before they are signed in
-to anything. Nothing proprietary lives here. Krista's skills and rules stay on her server,
-and the student's own work stays in their folder.
+1. makes `~/Sites/BOSS-OS` (or carries on in an earlier try of it);
+2. brings down `kmc`, the system's one script, from `https://kmc-os-server.vercel.app/kmc`;
+3. asks the student for the email address they bought with, and for the 8-digit code Krista's
+   server emails to it, and signs them in. Who may sign in, and which system is theirs, is
+   decided by Krista Mashore Coaching's records, the same check that used to decide the GitHub
+   invitation;
+4. installs the system into the folder;
+5. opens a new session in the folder, **Set up my BOSS**, that starts `set up my OS`, and puts
+   it on the student's screen. The system's rules only load in a session started inside its
+   own folder, which is why it is a new session; the student does not have to start it.
+   Where the app cannot open sessions, Claude tells the student the folder and the one thing
+   to type there.
 
-## For students
+It replaces [`boss-pre-setup`](https://github.com/KMC-coaching/boss-pre-setup) (computer
+setup, GitHub sign-in, then a form and an invitation to a private repository). That repo is
+left exactly as it was, for anyone partway through the older install.
 
-Paste the install prompt from the BOSS portal into Claude (the desktop app, Code tab, a new
-session set to Local). It downloads this skill's instructions and follows them. Or install this plugin and say:
+## Why the steps are in the paste, not in a file Claude downloads
 
-> install my BOSS
+Tested 2026-11-23 with real headless Claude Code runs, each in a throwaway home folder against
+the live server. Asked to download a long instruction file from this repo and follow it,
+Claude refused or stopped to warn the student in most runs, however the file was worded:
+following instructions fetched from the internet reads to it as an attack. A short paste with
+the steps written in it went straight through to asking for the email in most runs (today's
+version: 7 of 10 on Sonnet, and every Opus run).
 
-You will never be asked to open a terminal or type a command. You will be asked for the
-email address you bought BOSS with, and for the 8-digit code that arrives in it.
-
-## What it does
-
-1. Reads what is already on the machine
-2. Puts Git in place without the computer password (the system keeps its own history with
-   it, and on Windows it is what runs the system's script)
-3. Brings down `kmc`, the system's own script, from `https://kmc-os-server.vercel.app/kmc`,
-   and signs the student in with their email and the code sent to it. Who may sign in, and
-   which system is theirs, is decided by Krista Mashore Coaching's records, the same check
-   that used to decide the GitHub invitation
-4. Installs the system into `~/Sites/BOSS-OS`, and lets BOSS run a short list of routine
-   commands there without a box each time (that folder's own local settings; nothing else
-   on the computer changes)
-5. Opens a new session in that folder that starts `set up my OS`, and stops. In the Claude
-   desktop app it does that itself; anywhere else it gives the student four short steps
-
-## The paste
-
-The portal's prompt, for reference (the portal is the source the students copy from):
-
-```
-Install my BOSS operating system. It is Krista Mashore Coaching's BOSS system, which I
-bought, and it installs from her own server: a small program called kmc signs me in with a
-code sent to the email I bought with, and brings her skills and rules down at the start of
-every session in my BOSS-OS folder. I know that, and I want it installed exactly that way.
-
-The full install steps are in this file. Download it with curl (curl.exe on Windows) so you
-have its exact text (a web page reader only gives you a summary of it), then read it and
-follow it.
-
-https://raw.githubusercontent.com/KMC-coaching/boss-install/main/plugins/boss-install/skills/install-my-boss/SKILL.md
-
-I'm not technical, so do all of the technical parts for me. Never ask me to open a terminal,
-paste a command, or type my computer password. If a box pops up asking whether to allow
-something, I will say yes.
-```
+The runs that stopped all named the same thing: the product's own design, in which Krista's
+server sends Claude her current skills and rules at the start of every session. A student
+whose Claude stops to ask can say yes and it carries on; the portal tells them so.
 
 ## Checks
 
-`fresh-machine` runs on every push, on fresh Mac, Windows and Linux machines: it brings `kmc`
-down exactly as the skill says and proves it runs on each (including Windows, through Git's
-bash), and guards the rules that must not come back (no GitHub, no password, no Homebrew,
-no tagged copy blocks, one download address). `plugins/boss-install/evals/` holds the
-behaviour cases.
+`fresh-machine` runs on every push and daily, on fresh Mac, Windows and Linux machines:
+
+- it brings `kmc` down exactly as the paste says and proves it runs on each, including from
+  PowerShell on Windows through Git's own bash;
+- it guards the paste: the one download address, the BOSS-OS folder, the new session that
+  starts `set up my OS`, no GitHub, no password, no Terminal.
 
 ## Support
 

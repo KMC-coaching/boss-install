@@ -1,8 +1,0 @@
-{
-  "name": "boss-install",
-  "description": "INSTALLS YOUR BOSS SYSTEM - this is the first thing you do.\n\nTo activate, type in: install my BOSS\n\nWhat it does: puts the one tool your system needs in place without ever needing your computer password; signs you in to Krista's server with the email you bought with and a code sent to it; installs your system in a folder called BOSS-OS; then opens your system in its own session, where it starts setting itself up for your business.\n\nNo GitHub account, no form, no invitation. You will never be asked to open a terminal or type a command. Takes about 15-20 minutes before the setup starts.",
-  "version": "1.0.0",
-  "author": {
-    "name": "Krista Mashore Coaching"
-  }
-}

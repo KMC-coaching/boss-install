@@ -14,7 +14,7 @@ on:
     - cron: "17 12 * * *"
 
 env:
-  SKILL: plugins/boss-install/skills/install-my-boss/SKILL.md
+  PROMPT: install-prompt.txt
   KMC_URL: https://kmc-os-server.vercel.app/kmc
 
 jobs:
@@ -34,10 +34,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: The download address in the skill is the real one, and answers
+      - name: The download address in the paste is the real one, and answers
         shell: bash
         run: |
-          grep -q "$KMC_URL" "$SKILL" || { echo "::error::the skill no longer names $KMC_URL"; exit 1; }
+          grep -q "$KMC_URL" "$PROMPT" || { echo "::error::the paste no longer names $KMC_URL"; exit 1; }
           C=$(curl -s -o /dev/null -w '%{http_code}' "$KMC_URL")
           [ "$C" = 200 ] || { echo "::error::$KMC_URL answered HTTP $C"; exit 1; }
           echo "kmc is served: HTTP $C"
@@ -100,73 +100,38 @@ jobs:
           # kmc's own "not signed in" (4) is still in $LASTEXITCODE, which the runner would report.
           exit 0
 
-      - name: Manifests must be valid on every platform
-        shell: bash
-        run: |
-          python3 -c "import json;[json.load(open(p)) for p in ['.claude-plugin/marketplace.json','plugins/boss-install/.claude-plugin/plugin.json']];print('manifests parse')"
-          test -f "$SKILL" || { echo "::error::skill missing"; exit 1; }
-          grep -q '^name: install-my-boss$' "$SKILL" || { echo "::error::skill name changed"; exit 1; }
 
   rules:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: No admin, no password, anywhere in the skill
+      - name: The paste keeps every step, in order
         run: |
           FAIL=0
-          # Instructions, not mentions: the skill names Homebrew and sudo to forbid them.
-          if grep -nE '(^|[`( ])sudo [a-z]' "$SKILL"; then echo "::error::skill appears to invoke sudo"; FAIL=1; fi
-          if grep -nE 'brew install|install Homebrew|via Homebrew|using Homebrew' "$SKILL"; then
-            echo "::error::skill appears to route through Homebrew"; FAIL=1; fi
-          if grep -niE 'ask (them |her |the student )?for (their |her )?(computer |login )?password' "$SKILL" \
-             | grep -viE 'never|do not|don.t'; then echo "::error::skill appears to ask for a password"; FAIL=1; fi
-          grep -q 'Homebrew is never the answer' "$SKILL" || { echo "::error::the no-Homebrew statement was removed"; FAIL=1; }
+          need() { grep -qF "$1" "$PROMPT" || { echo "::error::the paste lost: $1"; FAIL=1; }; }
+          need "BOSS-OS inside my Sites folder"
+          need "$KMC_URL"
+          need "bash kmc whoami"
+          need "kmc login"
+          need "the email address I bought with"
+          need "kmc install"
+          need "Open a new session in that BOSS-OS folder"
+          need "set up my OS"
+          need "If you can't open a session"
           exit $FAIL
 
-      - name: GitHub is gone from the install, and stays gone
-        run: |
-          # The point of this install. The skill may say GitHub is not used; it must never
-          # install the GitHub tool, sign anyone in to GitHub, or hand out the old form.
-          FAIL=0
-          if grep -nE 'gh auth|GitHub\.cli|cli/cli/releases|github\.com/login/device|/get-boss|Bash\(gh:' "$SKILL"; then
-            echo "::error::the GitHub sign-in or the form is back in the skill"; FAIL=1; fi
-          grep -q 'Never ask her to make or sign in to a GitHub account' "$SKILL" \
-            || { echo "::error::the no-GitHub rule was removed"; FAIL=1; }
-          exit $FAIL
-
-      - name: Copy blocks must never be language-tagged
-        run: |
-          # A ```bash block gets a Run button in the desktop app. The folder path is shown in
-          # a fenced block so it gets a COPY button; tagging it makes it something to Run.
-          # Fences inside a blockquote ("> ```") count too: the path block is one.
-          if grep -nE '^\s*(>\s*)?```(bash|sh|shell|console|powershell|pwsh)\s*$' "$SKILL"; then
-            echo "::error::a language-tagged fence exists; it would render a Run button"; exit 1; fi
-          grep -q 'Never tag that block' "$SKILL" || { echo "::error::the untagged-path rule was removed"; exit 1; }
-
-      - name: The handoff opens her folder, in place, and runs the setup there
+      - name: Nothing in the paste sends her to GitHub, Terminal or her password
         run: |
           FAIL=0
-          # Every value start_session needs to actually start, rather than show a card that waits.
-          for want in '`initiation`: `"user_asked"`' '`context`: `"fresh"`' '`use_worktree`: `false`' \
-                      '`prompt`: `"set up my OS"`' '`title`: `"Set up my BOSS"`' '`background`: `"' '`cwd`:'; do
-            grep -qF "$want" "$SKILL" || { echo "::error::the start_session call lost $want"; FAIL=1; }
-          done
-          grep -q 'Never start her setup in this session' "$SKILL" || { echo "::error::the stop-here rule was removed"; FAIL=1; }
-          grep -q 'never for this one' "$SKILL" || { echo "::error::kmc install's 'Next: run setup' line is no longer handled"; FAIL=1; }
+          if grep -niE 'github|gh auth|/get-boss|invitation' "$PROMPT"; then echo "::error::GitHub or the form is back in the paste"; FAIL=1; fi
+          grep -qF "Never ask me to open Terminal, paste a command, or type my computer password" "$PROMPT" \
+            || { echo "::error::the no-Terminal, no-password line was removed"; FAIL=1; }
+          if grep -nE 'sudo |brew install' "$PROMPT"; then echo "::error::the paste asks for admin rights"; FAIL=1; fi
           exit $FAIL
 
-      - name: A Mac's stand-in git is never run
+      - name: It stays short
         run: |
-          FAIL=0
-          grep -q "Never run a Mac's \`git\` before \`xcode-select -p\` answers" "$SKILL" || { echo "::error::the Mac stand-in rule was removed"; FAIL=1; }
-          if grep -nE 'Poll until `git --version`' "$SKILL"; then echo "::error::polling git on a Mac reopens Apple's installer"; FAIL=1; fi
-          exit $FAIL
-
-      - name: Nobody is routed to office hours, a coach or the academy
-        run: |
-          # Students who install this way are not all in the Academy (Jerry, 2026-11-19). Help
-          # ends on bosssupport@kristamashore.com.
-          if grep -niE 'office hours|group call|facebook group|your coach|academy' "$SKILL"; then
-            echo "::error::the skill routes students somewhere not every student has"; exit 1; fi
-          grep -q 'bosssupport@kristamashore.com' "$SKILL" || { echo "::error::the support address is gone"; exit 1; }
+          # Longer pastes were stopped more often in testing (README). A new step has to earn it.
+          W=$(wc -w < "$PROMPT"); echo "$W words"
+          [ "$W" -le 420 ] || { echo "::error::the paste grew to $W words"; exit 1; }
