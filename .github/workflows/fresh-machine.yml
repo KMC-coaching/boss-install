@@ -21,10 +21,11 @@ jobs:
       fail-fast: false
       matrix:
         # Spread across ages and architectures, not just "latest": macos-15 is Apple
-        # silicon, macos-14 covers older Sonoma machines, windows-2022 is what a computer
+        # silicon (macos-14 was dropped on 2026-11-23: GitHub no longer runs it, and a red
+        # job that means nothing is worse than none), windows-2022 is what a computer
         # bought a few years ago still runs, ubuntu-22.04 stands in for older Linux and
         # Chromebook containers.
-        os: [ubuntu-latest, ubuntu-22.04, macos-latest, macos-15, macos-14,
+        os: [ubuntu-latest, ubuntu-22.04, macos-latest, macos-15,
              windows-latest, windows-2022]
     steps:
       - uses: actions/checkout@v4
