@@ -52,13 +52,20 @@ jobs:
             $p = Start-Process $exe -ArgumentList '/VERYSILENT','/NORESTART','/CURRENTUSER','/SUPPRESSMSGBOXES' -Wait -PassThru
             Write-Output "installer exit: $($p.ExitCode)"
           }
-          Get-ChildItem "$dest\bin" -ErrorAction SilentlyContinue | Select-Object -First 5 | ForEach-Object { $_.Name }
-          if (-not (Test-Path "$dest\bin\bash.exe")) { Write-Error "no per-user Git bash at $dest"; exit 1 }
-          Write-Output "Git's bash, for this user only: $dest\bin\bash.exe"
+          # Where it went: per user on a student's laptop; a runner works as an administrator, so
+          # the installer may choose Program Files. kmc.ps1 looks in both, in that order.
+          $found = @("$dest\bin\bash.exe", "$env:ProgramFiles\Git\bin\bash.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $found) {
+            $hit = Get-ChildItem -Path $env:LOCALAPPDATA, $env:ProgramFiles -Filter bash.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 3
+            Write-Output "bash.exe found at: $($hit.FullName -join '; ')"
+            Write-Error "Git's bash is in neither place kmc.ps1 looks"; exit 1
+          }
+          Write-Output "Git's bash: $found"
+          "GITBASH=$found" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
       - name: kmc runs with that bash, from an empty BOSS-OS folder
         shell: pwsh
         run: |
-          $bash = Join-Path $env:LOCALAPPDATA "Programs\Git\bin\bash.exe"
+          $bash = $env:GITBASH
           $folder = Join-Path $env:RUNNER_TEMP "student\Sites\BOSS-OS"
           New-Item -ItemType Directory -Force -Path $folder | Out-Null
           Set-Location $folder
