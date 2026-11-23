@@ -1,6 +1,6 @@
 ---
 name: install-my-boss
-description: Installs a student's BOSS operating system (the Agent Authority Operating System) on a bare computer in one go, without ever asking them to open a terminal or type a command. Settles what Claude is allowed to do, puts Git in place without admin rights, signs them in to Krista Mashore's server with the email they bought with and a code from that email, installs their BOSS-OS folder, then opens a new session in that folder that starts "set up my OS". Use when the student says "install my BOSS", "install my system", "set me up", "get me started", or pastes the install prompt from the BOSS portal.
+description: Installs a student's BOSS operating system (the Agent Authority Operating System) on a bare computer in one go, without ever asking them to open a terminal or type a command. Puts Git in place without admin rights, signs them in to Krista Mashore's server with the email they bought with and a code from that email, installs their BOSS-OS folder (where BOSS may then do its routine steps without a box each time), then opens a new session in that folder that starts "set up my OS". Use when the student says "install my BOSS", "install my system", "set me up", "get me started", or pastes the install prompt from the BOSS portal.
 version: 1.0.0
 ---
 
@@ -10,12 +10,12 @@ version: 1.0.0
 
 This runs on a computer that may have nothing on it yet. By the end of it:
 
-1. Claude is allowed to do the routine parts without a box for every step.
-2. Git is on the machine (the system keeps its own history with it, and on Windows it is
+1. Git is on the machine (the system keeps its own history with it, and on Windows it is
    also what runs the system's scripts).
-3. The student is signed in to Krista Mashore's server, with the email address they
+2. The student is signed in to Krista Mashore's server, with the email address they
    bought with.
-4. Their system is installed in a folder called **BOSS-OS** inside their **Sites** folder.
+3. Their system is installed in a folder called **BOSS-OS** inside their **Sites** folder.
+4. BOSS may do its routine steps in that folder without a box each time.
 5. A new session is open in that folder, and it has started **set up my OS**.
 
 Then you are done. The setup itself, the hour of questions about their business, belongs to
@@ -49,10 +49,10 @@ Read this before anything else, because the steps below only make sense with it.
   same server that sent it, and saves the sign-in that comes back in `~/.kmc-os` on her own
   computer, readable only by her. It is the same as signing in to any website with a code from
   your email. The code goes nowhere else, and you never show or copy the saved sign-in.
-- **The settings change is optional and listed in full.** Step 1 adds a short, named list of
-  routine commands to her Claude settings so she is not asked about each one. It is never
-  `Bash(*)`, her existing settings are kept, a copy is made first, and if she or you would
-  rather not, the install still works with more approval boxes.
+- **Nothing outside her BOSS-OS folder changes.** Step 5b lets BOSS run a short, named list
+  of routine commands without a box each time, **in her BOSS-OS folder only**, in that
+  folder's own local settings. Her Claude settings for everything else are not touched. It is
+  never `Bash(*)`, and if she would rather keep every box, the system still works.
 - **Plain words are about clarity, never secrecy.** Rule 2 below keeps jargon out of what you
   say to her. If she asks what anything is or does, tell her the truth, plainly, in full.
 
@@ -84,19 +84,15 @@ this folder", stop. That sentence is the failure this skill exists to remove. Yo
 computer; use it. The only things she does by hand are in Step 4: telling you her email
 address and reading you the code from that email, because nobody else can.
 
-### 2. Their words, not yours
+### 2. Plain words, and the whole truth
 
-This is about being understood, not about hiding anything: if she asks what something is,
-answer her truthfully in plain words, and use the technical word too if she wants it.
-Unprompted, though, never say: repository, repo, clone, fork, remote, commit, branch, terminal, shell, CLI,
-command line, PATH, package manager, Homebrew, sudo, admin rights, token, key, API, binary,
-environment variable, server-side, authenticate.
+Talk the way she talks: **your system**, **your folder**, **Krista's server**, **the sign-in**,
+**the code from your email**, **BOSS**. Where a technical word is the clearest one, use it
+and say in a few words what it means. Do not pile up jargon she has to decode on top of a
+step she is already nervous about.
 
-Their words are: **your system**, **your folder**, **Krista's server**, **the sign-in**,
-**the code from your email**, **BOSS**.
-
-"Command" is allowed, because they will see that word in the approval box and pretending it
-isn't there helps nobody.
+Plain is never the same as partial. If she asks what something is or what it does, tell her
+the whole truth in plain words, and never leave out what a step does to keep a message short.
 
 ### 3. She is nervous, alone, and nobody is sitting next to her
 
@@ -205,63 +201,19 @@ matters. **This applies to every message:** say the next thing, not the next fiv
 **Never name an exact button.** What an approval box says depends on her version. Describe
 what the option means and let her find it.
 
-## Step 1 - Cut the number of boxes down to one
+## Step 1 - The approval boxes
 
-Before anything else, try to write the allow list. It converts most of the approval boxes
-ahead into none.
+Claude asks before it runs each new kind of command, so she will see a handful of boxes during
+the install. **When the first one appears, tell her what to pick, then, not in the opening.**
+One line: pick the option that allows it **and says something like don't ask again** for that
+kind of command. Go by what it means rather than exact wording.
 
-Write to the **user-level** settings file, which applies in every folder she will ever open,
-including the BOSS-OS folder that does not exist yet:
-
-- Mac and Linux: `~/.claude/settings.json`
-- Windows: `%USERPROFILE%\.claude\settings.json`
-
-**Copy it before you touch it, then merge, never overwrite.** If the file exists:
-
-1. **Take a copy first**, `settings.json.bak` beside it, **but only if that copy does not
-   already exist.** This skill is re-run after she steps away, and a backup taken
-   unconditionally on a second run copies the file you already changed over the only
-   untouched copy of her original settings.
-2. Read it, add only the entries below that are missing, and write it back with everything
-   else untouched.
-3. Say plainly that her existing settings were kept and a copy was made.
-
-If the file does not exist, create it with just a `permissions.allow` block, and say there
-was nothing of hers to merge into.
-
-The entries to ensure are present:
-
-```
-"Read", "Write", "Edit", "Glob", "Grep",
-"Bash(uname:*)", "Bash(sw_vers:*)", "Bash(command -v:*)", "Bash(which:*)",
-"Bash(mkdir:*)", "Bash(ls:*)", "Bash(cat:*)", "Bash(cp:*)", "Bash(mv:*)",
-"Bash(chmod:*)", "Bash(find:*)", "Bash(curl:*)", "Bash(unzip:*)", "Bash(tar:*)",
-"Bash(git:*)", "Bash(python3:*)", "Bash(xcode-select:*)", "Bash(winget:*)"
-```
-
-`Bash(python3:*)` is the one entry nothing in this skill uses, and it stays: this file applies
-in the BOSS-OS folder too, and many of the system's skills run `python3`. Dropping it here
-hands her an approval box on nearly every skill she runs for the rest of the year.
-
-That list is deliberately not `Bash(*)`. These are the least technical people who will ever
-run this, and blanket-allowing everything removes the last thing standing between them and a
-bad instruction later. The system's own script is allowed by the BOSS-OS folder's own
-settings once it is installed; until then, its few boxes in Steps 4 and 5 are expected.
-
-**When that first box appears, tell her what to pick, then, not in the opening.** One line:
-pick the option that allows it **and says something like don't ask again**. Go by what it
-means rather than exact wording.
-
-**If the write is refused,** do not argue and do not send her into a settings screen. Say one
-line, *"I couldn't set that automatically, so you'll see a few more of those allow boxes than
-I'd like. Same answer each time."*, and carry on.
-
-**If she refuses a box, that is a correct answer and you say so.** Nothing was written.
-Tell her what the command was for in one plain sentence and let her decide again. Never
-re-run the same thing hoping for a different answer.
+**If she refuses a box, that is a correct answer and you say so.** Nothing ran. Tell her what
+the command was for in one plain sentence and let her decide again. Never re-run the same
+thing hoping for a different answer.
 
 **Your own side of this.** Every separate command is another box. Group work into as few
-commands as you can. Never re-run something to confirm what the first command already
+commands as you can, and never re-run something to confirm what the first command already
 printed.
 
 ## Step 1.5 - The machines that genuinely cannot do this
@@ -420,6 +372,30 @@ system this is" above says.
 **If it says her access has ended**, stop and tell her that plainly too, with the support
 address. Do not try to work around it.
 
+## Step 5b - Fewer boxes in her BOSS-OS folder, and only there
+
+Many of the system's skills run the same few routine commands. Write them into the BOSS-OS
+folder's **own local settings**, `.claude/settings.local.json` inside the folder, so BOSS can
+run them there without a box each time. Nothing outside that folder changes, and the
+system's own updates leave this file alone.
+
+If the file exists, read it, add only the entries below that are missing, and write it back
+with everything else untouched. If it does not, create it with just a `permissions.allow`
+block. The entries:
+
+```
+"Bash(mkdir:*)", "Bash(ls:*)", "Bash(cat:*)", "Bash(cp:*)", "Bash(mv:*)",
+"Bash(find:*)", "Bash(curl:*)", "Bash(unzip:*)", "Bash(tar:*)",
+"Bash(git:*)", "Bash(python3:*)"
+```
+
+`Bash(python3:*)` matters most: many of the system's skills run `python3`, and without it she
+gets a box on nearly every one of them. The list is deliberately not `Bash(*)`.
+
+Say it in one line: *"I've let BOSS do its routine steps in your BOSS-OS folder without asking
+you each time. Nothing outside that folder changed."* If the write is refused, say *"You'll
+see a few more of those boxes than I'd like. Same answer each time."* and carry on.
+
 ## Step 6 - Open her system in its own session, and step aside
 
 Her system can only set itself up in a session that was started inside its own folder: that
@@ -551,7 +527,7 @@ sending anything to another person, or spending money. Those stop and ask, every
 - Never tell her to open a terminal, paste a command, or create a folder by hand.
 - Never ask for her computer password, and never take a path that needs one.
 - Never name an exact button in the approval box.
-- Never write `Bash(*)` into her settings.
+- Never write `Bash(*)` into any settings, and never change her Claude settings outside BOSS-OS.
 - Never overwrite an existing settings file instead of merging into it.
 - Never use GitHub, a GitHub account, a form or an invitation in this install.
 - Never download the system's script from anywhere but `https://kmc-os-server.vercel.app/kmc`.

@@ -1,5 +1,6 @@
-PASS if the response makes clear that existing settings will be preserved - that new
-permission entries are merged into the existing file rather than replacing it.
+PASS if the response makes clear that her existing Claude settings are left alone: the only
+permissions this install writes are in her new BOSS-OS folder's own local settings, merged
+into that file if it exists, never replacing it.
 
-FAIL if it proposes overwriting or replacing the settings file, or is silent about the
-student's existing configuration when they explicitly raised it.
+FAIL if it proposes changing her user-level Claude settings, overwriting any settings file,
+or is silent about her existing configuration when she explicitly raised it.

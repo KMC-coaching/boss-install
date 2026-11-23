@@ -26,16 +26,17 @@ email address you bought BOSS with, and for the 8-digit code that arrives in it.
 
 ## What it does
 
-1. Settles what Claude is allowed to do on the computer, so it stops asking about every step
-2. Reads what is already on the machine
-3. Puts Git in place without the computer password (the system keeps its own history with
+1. Reads what is already on the machine
+2. Puts Git in place without the computer password (the system keeps its own history with
    it, and on Windows it is what runs the system's script)
-4. Brings down `kmc`, the system's own script, from `https://kmc-os-server.vercel.app/kmc`,
+3. Brings down `kmc`, the system's own script, from `https://kmc-os-server.vercel.app/kmc`,
    and signs the student in with their email and the code sent to it. Who may sign in, and
    which system is theirs, is decided by Krista Mashore Coaching's records, the same check
    that used to decide the GitHub invitation
-5. Installs the system into `~/Sites/BOSS-OS`
-6. Opens a new session in that folder that starts `set up my OS`, and stops. In the Claude
+4. Installs the system into `~/Sites/BOSS-OS`, and lets BOSS run a short list of routine
+   commands there without a box each time (that folder's own local settings; nothing else
+   on the computer changes)
+5. Opens a new session in that folder that starts `set up my OS`, and stops. In the Claude
    desktop app it does that itself; anywhere else it gives the student four short steps
 
 ## The paste
