@@ -1,0 +1,66 @@
+name: windows-no-git
+
+# A Windows computer that has never had Git: can the install put Git in place for that
+# one user (no admin prompt), and does kmc then run with it? Runners come with Git, so
+# it is taken off PATH first, which is what a student's computer looks like to Claude.
+
+on:
+  workflow_dispatch:
+  push:
+    paths: [".github/workflows/windows-no-git.yml"]
+
+jobs:
+  no-git:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, windows-2022]
+    steps:
+      - name: Take Git off PATH, as on a computer that never had it
+        shell: pwsh
+        run: |
+          $keep = ($env:PATH -split ';') | Where-Object { $_ -and ($_ -notmatch '\\Git\\') }
+          "PATH=$($keep -join ';')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Install Git for this user only, the way the paste says
+        shell: pwsh
+        run: |
+          if (Get-Command git -ErrorAction SilentlyContinue) { Write-Error "Git is still on PATH"; exit 1 }
+          $winget = Get-Command winget -ErrorAction SilentlyContinue
+          Write-Output "winget: $([bool]$winget)"
+          $dest = Join-Path $env:LOCALAPPDATA "Programs\Git"
+          if ($winget) {
+            winget install --id Git.Git -e --scope user --silent --accept-package-agreements --accept-source-agreements --disable-interactivity
+            Write-Output "winget exit: $LASTEXITCODE"
+          }
+          if (-not (Test-Path "$dest\bin\bash.exe")) {
+            # No winget (older Windows), or winget would not do a per-user install: Git's own
+            # installer, per user, silent. The newest release, from Git for Windows itself.
+            $rel = Invoke-RestMethod "https://api.github.com/repos/git-for-windows/git/releases/latest"
+            $asset = $rel.assets | Where-Object { $_.name -match '^Git-.*-64-bit\.exe$' } | Select-Object -First 1
+            Write-Output "installer: $($asset.name)"
+            $exe = Join-Path $env:TEMP $asset.name
+            curl.exe -fsSL -o $exe $asset.browser_download_url
+            $p = Start-Process $exe -ArgumentList '/VERYSILENT','/NORESTART','/CURRENTUSER','/SUPPRESSMSGBOXES' -Wait -PassThru
+            Write-Output "installer exit: $($p.ExitCode)"
+          }
+          Get-ChildItem "$dest\bin" -ErrorAction SilentlyContinue | Select-Object -First 5 | ForEach-Object { $_.Name }
+          if (-not (Test-Path "$dest\bin\bash.exe")) { Write-Error "no per-user Git bash at $dest"; exit 1 }
+          Write-Output "Git's bash, for this user only: $dest\bin\bash.exe"
+      - name: kmc runs with that bash, from an empty BOSS-OS folder
+        shell: pwsh
+        run: |
+          $bash = Join-Path $env:LOCALAPPDATA "Programs\Git\bin\bash.exe"
+          $folder = Join-Path $env:RUNNER_TEMP "student\Sites\BOSS-OS"
+          New-Item -ItemType Directory -Force -Path $folder | Out-Null
+          Set-Location $folder
+          curl.exe -fsSL -o kmc https://kmc-os-server.vercel.app/kmc
+          $env:KMCOS_HOME = Join-Path $env:RUNNER_TEMP "student\.kmc-os"
+          $out = & $bash kmc whoami 2>&1
+          $code = $LASTEXITCODE
+          Write-Output $out
+          if ($code -ne 4) { Write-Error "expected 'not signed in' (exit 4), got $code"; exit 1 }
+          if (-not (Test-Path ".claude\scripts\kmc")) { Write-Error "kmc did not move itself into place"; exit 1 }
+          Write-Output "kmc runs on a Windows computer whose only Git is the one the install just added"
+          exit 0
