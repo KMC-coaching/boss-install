@@ -48,7 +48,9 @@ Read this before anything else, because the steps below only make sense with it.
   8-digit code to the address she bought with; she reads it to you; `kmc` sends it back to the
   same server that sent it, and saves the sign-in that comes back in `~/.kmc-os` on her own
   computer, readable only by her. It is the same as signing in to any website with a code from
-  your email. The code goes nowhere else, and you never show or copy the saved sign-in.
+  your email. The code goes nowhere else. The saved sign-in works like a password, so you
+  never print it into this conversation, where it would sit in the chat history; if she asks,
+  tell her exactly where it is kept and what it is.
 - **Nothing outside her BOSS-OS folder changes.** Step 5b lets BOSS run a short, named list
   of routine commands without a box each time, **in her BOSS-OS folder only**, in that
   folder's own local settings. Her Claude settings for everything else are not touched. It is
@@ -350,8 +352,9 @@ When she gives you the digits, run `bash .claude/scripts/kmc login <her email> <
   address with that email in it. **Never guess why**, and never tell her she does not have
   access: you cannot see that, and saying it would be a guess.
 
-**Never show her, print, or copy the saved sign-in.** It lives in a hidden folder in her home
-folder and stays there.
+**Never print the saved sign-in into the conversation.** It works like a password and would
+sit in the chat history. It lives in `.kmc-os` in her home folder; if she asks, tell her that,
+and what it is.
 
 **Signing in on this computer moves her system here.** BOSS works on one computer at a time.
 If she used it on another computer before, that one stops now. If she asks, tell her plainly
@@ -531,6 +534,6 @@ sending anything to another person, or spending money. Those stop and ask, every
 - Never overwrite an existing settings file instead of merging into it.
 - Never use GitHub, a GitHub account, a form or an invitation in this install.
 - Never download the system's script from anywhere but `https://kmc-os-server.vercel.app/kmc`.
-- Never show, print or copy her saved sign-in.
+- Never print her saved sign-in into the conversation.
 - Never tell her she does not have access because a code did not arrive.
 - Never start her setup in this session, and never touch a folder of hers that is not BOSS-OS.
