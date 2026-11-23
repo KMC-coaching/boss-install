@@ -70,6 +70,32 @@ jobs:
           [ "$AGAIN" = 4 ] || { echo "::error::kmc from .claude/scripts answered exit $AGAIN"; exit 1; }
           echo "kmc runs on $RUNNER_OS from an empty folder, and asks for a sign-in"
 
+      - name: What kmc tells the AI to tell the student, on this computer
+        shell: bash
+        run: |
+          set -u
+          HOME_DIR="$RUNNER_TEMP/student"
+          KMC="$HOME_DIR/Sites/BOSS-OS/.claude/scripts/kmc"
+          # Asking for a code: what to do if it never arrives (the server sends nothing to an
+          # address without access, and says so the same way either way).
+          OUT=$(KMCOS_HOME="$HOME_DIR/.kmc-os" bash "$KMC" login ci-fresh-machine@example.com 2>&1); CODE=$?
+          echo "$OUT"
+          [ "$CODE" = 0 ] || { echo "::error::asking for a code answered exit $CODE"; exit 1; }
+          echo "$OUT" | grep -q "check their spam folder" || { echo "::error::no spam advice after asking for a code"; exit 1; }
+          echo "$OUT" | grep -q "bosssupport@kristamashore.com" || { echo "::error::no support address after asking for a code"; exit 1; }
+          # A folder that already holds someone's things: nothing is installed, and the AI asks.
+          BUSY="$RUNNER_TEMP/busy/Sites/BOSS-OS"
+          mkdir -p "$BUSY/.claude/scripts" && cp "$KMC" "$BUSY/.claude/scripts/kmc" && echo notes > "$BUSY/My Notes.txt"
+          set +e
+          OUT=$(cd "$BUSY" && KMCOS_HOME="$HOME_DIR/.kmc-os" bash .claude/scripts/kmc install 2>&1); CODE=$?
+          set -e
+          echo "$OUT"
+          [ "$CODE" = 1 ] || { echo "::error::a busy folder answered exit $CODE"; exit 1; }
+          echo "$OUT" | grep -q "My Notes.txt" || { echo "::error::kmc did not name what is in the folder"; exit 1; }
+          echo "$OUT" | grep -q "ask the student whether this is the right folder" || { echo "::error::kmc did not say to ask"; exit 1; }
+          [ ! -e "$BUSY/CLAUDE.md" ] || { echo "::error::kmc installed into a busy folder"; exit 1; }
+          echo "kmc's sign-in and folder messages are right on $RUNNER_OS"
+
       - name: From PowerShell on Windows, the way a student's Claude may run it
         if: runner.os == 'Windows'
         shell: pwsh
@@ -124,6 +150,12 @@ jobs:
           need "curl -fsSL"
           need "set up my OS"
           need "If you can't, tell me the folder's full path"
+          # Windows without Git: BOSS needs Git's bash, and Claude finds Git in Program Files
+          # by itself, so it is installed there (windows-no-git.yml proves it).
+          need "On Windows only: if Git for Windows is not installed, install it for me first"
+          need "winget install --id Git.Git -e --silent"
+          need "use Git's bash.exe for every bash step below"
+          need "tell me to click Yes"
           exit $FAIL
 
       - name: Nothing in the paste sends her to GitHub, Terminal or her password
@@ -139,5 +171,6 @@ jobs:
         run: |
           # Longer pastes were stopped more often in testing (README). A new step has to earn it,
           # and what Claude tells the student along the way belongs in kmc's own output instead.
+          # 400 since the Windows Git step (Opus went straight through 10 of 10 with it).
           W=$(wc -w < "$PROMPT"); echo "$W words"
-          [ "$W" -le 350 ] || { echo "::error::the paste grew to $W words"; exit 1; }
+          [ "$W" -le 400 ] || { echo "::error::the paste grew to $W words"; exit 1; }

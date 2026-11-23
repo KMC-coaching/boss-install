@@ -1,0 +1,81 @@
+name: windows-no-git
+
+# A Windows computer that has never had Git: can the install put Git in place for that
+# one user (no admin prompt), and does kmc then run with it? Runners come with Git, so
+# it is taken off PATH first, which is what a student's computer looks like to Claude.
+
+on:
+  workflow_dispatch:
+  push:
+    paths: [".github/workflows/windows-no-git.yml"]
+
+jobs:
+  no-git:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, windows-2022]
+    steps:
+      - name: Remove Git, so this is a computer that never had it
+        shell: pwsh
+        run: |
+          # Runners come with Git for every user. Uninstall it (its own uninstaller, silent),
+          # or an installer only updates that copy and proves nothing about a per-user one.
+          foreach ($u in @("$env:ProgramFiles\Git\unins000.exe", "${env:ProgramFiles(x86)}\Git\unins000.exe")) {
+            if (Test-Path $u) { $p = Start-Process $u -ArgumentList '/VERYSILENT','/NORESTART','/SUPPRESSMSGBOXES' -Wait -PassThru; Write-Output "uninstalled $u ($($p.ExitCode))" }
+          }
+          Start-Sleep -Seconds 5
+          if (Test-Path "$env:ProgramFiles\Git\bin\bash.exe") { Write-Error "Git is still installed"; exit 1 }
+          $keep = ($env:PATH -split ';') | Where-Object { $_ -and ($_ -notmatch '\\Git\\') }
+          "PATH=$($keep -join ';')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Install Git the way the paste says
+        shell: pwsh
+        run: |
+          if (Get-Command git -ErrorAction SilentlyContinue) { Write-Error "Git is still on PATH"; exit 1 }
+          $winget = Get-Command winget -ErrorAction SilentlyContinue
+          Write-Output "winget: $([bool]$winget)"
+          $dest = Join-Path $env:LOCALAPPDATA "Programs\Git"
+          if ($winget) {
+            # Exactly the paste's command: system-wide, because Claude looks for Git in Program
+            # Files by itself, so a session opened after this finds it without a restart.
+            winget install --id Git.Git -e --silent --accept-package-agreements --accept-source-agreements --disable-interactivity
+            Write-Output "winget exit: $LASTEXITCODE"
+          }
+          if (-not (Test-Path "$dest\bin\bash.exe")) {
+            # No winget (older Windows): Git's own installer, silent, the newest release from
+            # Git for Windows itself.
+            $rel = Invoke-RestMethod "https://api.github.com/repos/git-for-windows/git/releases/latest"
+            $asset = $rel.assets | Where-Object { $_.name -match '^Git-.*-64-bit\.exe$' } | Select-Object -First 1
+            Write-Output "installer: $($asset.name)"
+            $exe = Join-Path $env:TEMP $asset.name
+            curl.exe -fsSL -o $exe $asset.browser_download_url
+            $p = Start-Process $exe -ArgumentList '/VERYSILENT','/NORESTART','/SUPPRESSMSGBOXES' -Wait -PassThru
+            Write-Output "installer exit: $($p.ExitCode)"
+          }
+          # It must land in Program Files: that is where Claude looks for Git first.
+          $found = @("$env:ProgramFiles\Git\bin\bash.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $found) {
+            $hit = Get-ChildItem -Path $env:LOCALAPPDATA, $env:ProgramFiles -Filter bash.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 3
+            Write-Output "bash.exe found at: $($hit.FullName -join '; ')"
+            Write-Error "Git's bash is not in Program Files, where Claude looks for it"; exit 1
+          }
+          Write-Output "Git's bash: $found"
+          "GITBASH=$found" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: kmc runs with that bash, from an empty BOSS-OS folder
+        shell: pwsh
+        run: |
+          $bash = $env:GITBASH
+          $folder = Join-Path $env:RUNNER_TEMP "student\Sites\BOSS-OS"
+          New-Item -ItemType Directory -Force -Path $folder | Out-Null
+          Set-Location $folder
+          curl.exe -fsSL -o kmc https://kmc-os-server.vercel.app/kmc
+          $env:KMCOS_HOME = Join-Path $env:RUNNER_TEMP "student\.kmc-os"
+          $out = & $bash kmc whoami 2>&1
+          $code = $LASTEXITCODE
+          Write-Output $out
+          if ($code -ne 4) { Write-Error "expected 'not signed in' (exit 4), got $code"; exit 1 }
+          if (-not (Test-Path ".claude\scripts\kmc")) { Write-Error "kmc did not move itself into place"; exit 1 }
+          Write-Output "kmc runs on a Windows computer whose only Git is the one the install just added"
+          exit 0
