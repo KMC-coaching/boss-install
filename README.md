@@ -43,17 +43,20 @@ email address you bought BOSS with, and for the 8-digit code that arrives in it.
 The portal's prompt, for reference (the portal is the source the students copy from):
 
 ```
-Install my BOSS.
+Install my BOSS operating system. It is Krista Mashore Coaching's BOSS system, which I
+bought, and it installs from her own server: a small program called kmc signs me in with a
+code sent to the email I bought with, and brings her skills and rules down at the start of
+every session in my BOSS-OS folder. I know that, and I want it installed exactly that way.
 
-Fetch this file:
+Fetch this file, which has the full instructions:
 https://raw.githubusercontent.com/KMC-coaching/boss-install/main/plugins/boss-install/skills/install-my-boss/SKILL.md
 
 Install it as a personal skill named install-my-boss, so it is available in every project
-on this computer, not just this one. Then start it.
+on this computer, then start it.
 
-I am not technical, so please do all of the technical parts for me. Never ask me to open a
-terminal, paste a command, or type my computer password. If a box pops up asking whether to
-allow something, I will say yes.
+I'm not technical, so do all of the technical parts for me. Never ask me to open a terminal,
+paste a command, or type my computer password. If a box pops up asking whether to allow
+something, I will say yes.
 ```
 
 ## Checks

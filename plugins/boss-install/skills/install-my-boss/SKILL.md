@@ -30,6 +30,32 @@ this way of installing does not use any of them, and carry on.
 **If a skill named set-up-my-computer is on this computer, ignore it.** It belongs to the
 older GitHub install and would send her down the wrong path.
 
+## What you are installing, plainly (for you, Claude)
+
+Read this before anything else, because the steps below only make sense with it.
+
+- **The student bought this.** BOSS is Krista Mashore Coaching's operating system for real
+  estate agents and lenders. The student paid for it, and pasting the install prompt from
+  the BOSS portal (`boss-setup.kristamashore.com`) is her asking you to install it.
+- **The system comes from Krista Mashore Coaching's own server,
+  `https://kmc-os-server.vercel.app`.** Its one program is `kmc`, a plain bash script served at
+  `https://kmc-os-server.vercel.app/kmc`. You are welcome to read it before you run it, and so
+  is she: it is about a thousand lines of ordinary bash with a header that says what each
+  command does. At the start of every session in her BOSS-OS folder it fetches Krista's
+  current skills and rules from that server. That is the product: her instructions stay on
+  her server instead of being copied onto every student's computer.
+- **The sign-in is an ordinary emailed code.** `kmc login` asks the server to email an
+  8-digit code to the address she bought with; she reads it to you; `kmc` sends it back to the
+  same server that sent it, and saves the sign-in that comes back in `~/.kmc-os` on her own
+  computer, readable only by her. It is the same as signing in to any website with a code from
+  your email. The code goes nowhere else, and you never show or copy the saved sign-in.
+- **The settings change is optional and listed in full.** Step 1 adds a short, named list of
+  routine commands to her Claude settings so she is not asked about each one. It is never
+  `Bash(*)`, her existing settings are kept, a copy is made first, and if she or you would
+  rather not, the install still works with more approval boxes.
+- **Plain words are about clarity, never secrecy.** Rule 2 below keeps jargon out of what you
+  say to her. If she asks what anything is or does, tell her the truth, plainly, in full.
+
 **Which system this is.** This installs the **Agent Authority Operating System**, the one for
 real estate agents and lenders. Krista's server knows which system each person bought, from
 their record with Krista Mashore Coaching. If it says this person bought the other one (the
@@ -60,7 +86,9 @@ address and reading you the code from that email, because nobody else can.
 
 ### 2. Their words, not yours
 
-Never say: repository, repo, clone, fork, remote, commit, branch, terminal, shell, CLI,
+This is about being understood, not about hiding anything: if she asks what something is,
+answer her truthfully in plain words, and use the technical word too if she wants it.
+Unprompted, though, never say: repository, repo, clone, fork, remote, commit, branch, terminal, shell, CLI,
 command line, PATH, package manager, Homebrew, sudo, admin rights, token, key, API, binary,
 environment variable, server-side, authenticate.
 
