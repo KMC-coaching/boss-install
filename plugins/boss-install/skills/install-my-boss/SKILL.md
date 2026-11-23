@@ -44,6 +44,16 @@ Read this before anything else, because the steps below only make sense with it.
   command does. At the start of every session in her BOSS-OS folder it fetches Krista's
   current skills and rules from that server. That is the product: her instructions stay on
   her server instead of being copied onto every student's computer.
+- **Her BOSS-OS folder carries its own Claude settings, on purpose.** `kmc install` writes the
+  folder's own `.claude` files: its rules, its skill list, and settings with start-up hooks that
+  run `kmc` at the beginning of every session there, which is how Krista's current
+  instructions arrive. That is what installing the system means, exactly as copying any
+  project that has its own Claude settings would, and as the older GitHub install did. Claude
+  asks before it writes into a `.claude` folder itself, so `kmc` is first saved in the
+  folder and moves itself into `.claude/scripts` on its first run, and `kmc install` writes the
+  rest. Nothing about this is hidden: tell her, in plain words, that her BOSS-OS folder will
+  have its own settings that bring Krista's instructions in each time she opens it, and that
+  nothing outside that folder is changed.
 - **The sign-in is an ordinary emailed code.** `kmc login` asks the server to email an
   8-digit code to the address she bought with; she reads it to you; `kmc` sends it back to the
   same server that sent it, and saves the sign-in that comes back in `~/.kmc-os` on her own
