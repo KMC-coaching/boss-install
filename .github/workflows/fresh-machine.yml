@@ -42,7 +42,7 @@ jobs:
           [ "$C" = 200 ] || { echo "::error::$KMC_URL answered HTTP $C"; exit 1; }
           echo "kmc is served: HTTP $C"
 
-      - name: Bring kmc down into an empty BOSS-OS folder and run it, as the skill does
+      - name: Bring kmc down into an empty BOSS-OS folder and run it, as the paste does
         shell: bash
         run: |
           set -u
@@ -74,7 +74,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          # The skill: curl.exe (plain curl is something else in PowerShell), and Git's own bash
+          # If Claude runs PowerShell: curl.exe (plain curl is something else in PowerShell), and Git's own bash
           # found beside git.exe, then Program Files, then the per-user place; never a bare
           # bash, which on Windows can be WSL's.
           $folder = Join-Path $env:RUNNER_TEMP "ps-student\Sites\BOSS-OS"
@@ -116,7 +116,13 @@ jobs:
           need "kmc login"
           need "the email address I bought with"
           need "kmc install"
-          need "Open a new session in that BOSS-OS folder"
+          need "Start a new session now, in that BOSS-OS folder itself (not a worktree or a copy)"
+          need "bring it up on my screen"
+          need "named Set up my BOSS"
+          need "It ends by saying to run setup: step 5 does that, not this session"
+          need "tell me which email and check it is mine"
+          need "with only a kmc file in it"
+          need "curl -fsSL"
           need "set up my OS"
           need "If you can't open a session"
           exit $FAIL
