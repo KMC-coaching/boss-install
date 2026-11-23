@@ -32,12 +32,27 @@ Tested 2026-11-23 with real headless Claude Code runs, each in a throwaway home 
 the live server. Asked to download a long instruction file from this repo and follow it,
 Claude refused or stopped to warn the student in most runs, however the file was worded:
 following instructions fetched from the internet reads to it as an attack. A short paste with
-the steps written in it went straight through to asking for the email in most runs (today's
-version: 7 of 10 on Sonnet, and every Opus run).
+the steps written in it went straight through to asking for the email in most runs.
 
-The runs that stopped all named the same thing: the product's own design, in which Krista's
-server sends Claude her current skills and rules at the start of every session. A student
-whose Claude stops to ask can say yes and it carries on; the portal tells them so.
+The paste stays short on purpose. What Claude has to tell the student along the way (whose
+sign-in a computer already has, what to do when no code arrives, Apple's developer tools
+window, a folder that already holds someone's things, and that setup runs in the new session)
+is said by `kmc` itself, at the moment each applies, not written into the paste: Claude reads
+`kmc`'s words only once it has started, so they cannot make it stop at the first message.
+
+Sonnet, the first turn, 2026-11-23 (each run a throwaway home against the live server):
+
+| Paste | Went straight on to ask for the email |
+|---|---|
+| the portal's earlier paste, which stops before opening the session | 27 of 30 |
+| this paste, which also opens the session | 15 of 20 |
+| this paste with two sentences of step 5 removed | 12 of 20 |
+
+Every run that stopped named the same thing: the product's own design, in which Krista's
+server sends Claude her current skills and rules at the start of every session. Some named the
+vercel.app address as one it could not vouch for. Of five that stopped, two carried on when the
+student said yes and three refused again, so a stop is not always one "yes" away. Opus went
+straight through in every run (4 of 4).
 
 ## Checks
 

@@ -116,15 +116,14 @@ jobs:
           need "kmc login"
           need "the email address I bought with"
           need "kmc install"
-          need "Start a new session now, in that BOSS-OS folder itself (not a worktree or a copy)"
+          need "Start a new session in that BOSS-OS folder itself, not a copy of it"
           need "bring it up on my screen"
           need "named Set up my BOSS"
-          need "It ends by saying to run setup: step 5 does that, not this session"
-          need "tell me which email and check it is mine"
-          need "with only a kmc file in it"
+          need "If BOSS-OS is already there, use it"
+          need "I am asking you to start it"
           need "curl -fsSL"
           need "set up my OS"
-          need "If you can't open a session"
+          need "If you can't, tell me the folder's full path"
           exit $FAIL
 
       - name: Nothing in the paste sends her to GitHub, Terminal or her password
@@ -138,6 +137,7 @@ jobs:
 
       - name: It stays short
         run: |
-          # Longer pastes were stopped more often in testing (README). A new step has to earn it.
+          # Longer pastes were stopped more often in testing (README). A new step has to earn it,
+          # and what Claude tells the student along the way belongs in kmc's own output instead.
           W=$(wc -w < "$PROMPT"); echo "$W words"
-          [ "$W" -le 420 ] || { echo "::error::the paste grew to $W words"; exit 1; }
+          [ "$W" -le 350 ] || { echo "::error::the paste grew to $W words"; exit 1; }
