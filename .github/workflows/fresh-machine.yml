@@ -97,6 +97,8 @@ jobs:
           & $bash .claude/scripts/kmc whoami *> $null
           if ($LASTEXITCODE -ne 4) { Write-Error "kmc from .claude/scripts answered exit $LASTEXITCODE"; exit 1 }
           Write-Output "kmc runs from PowerShell through Git's bash, with a path that has a space in it"
+          # kmc's own "not signed in" (4) is still in $LASTEXITCODE, which the runner would report.
+          exit 0
 
       - name: Manifests must be valid on every platform
         shell: bash
