@@ -2,5 +2,10 @@
 node_modules/
 .env
 .env.*
+.env.local
 *.local
-plugins/boss-pre-setup/evals/results/
+build/
+dist/
+.next/
+graphify-out/
+plugins/boss-install/evals/results/

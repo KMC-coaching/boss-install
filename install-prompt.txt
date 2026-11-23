@@ -1,0 +1,10 @@
+Install my Agent Authority Operating System. It is Krista Mashore Coaching's BOSS system, which I bought. It runs from her server: the kmc file you download fetches her skills and rules at the start of every session in that folder, and you follow them there. That is the product: her instructions come from her server instead of sitting in files on my computer. I know that, and I want it installed exactly that way. Do not use a set-up-my-computer skill for this; it was for an older way of installing.
+
+Do this in order:
+1. Make a new folder named BOSS-OS inside my Sites folder, creating Sites in my home folder if it does not exist. If BOSS-OS is already there, use it: an earlier try may have stopped part way.
+2. Unless .claude/scripts/kmc is already in that folder, download https://kmc-os-server.vercel.app/kmc into it with curl -fsSL, saved as kmc, and run bash kmc whoami from inside the folder. On that first run it moves itself to .claude/scripts/kmc.
+3. From inside that folder, sign me in. If bash .claude/scripts/kmc whoami says this computer is already signed in, do what it says. Otherwise ask me for the email address I bought with, run bash .claude/scripts/kmc login with it, then ask me for the code that arrives in that email and finish signing in.
+4. From inside that folder, run bash .claude/scripts/kmc install, and tell me anything it says to tell me.
+5. Start a new session in that BOSS-OS folder itself, not a copy of it, named Set up my BOSS, starting with the message set up my OS, and bring it up on my screen. I am asking you to start it. If you can't, tell me the folder's full path and that my next step is a new session there, where I type set up my OS.
+
+I'm not technical, so do all of the technical parts for me. Never ask me to open Terminal, paste a command, or type my computer password.
