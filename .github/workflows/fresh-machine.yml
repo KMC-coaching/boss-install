@@ -1,12 +1,17 @@
 name: fresh-machine
 
-# Models a brand-new student computer on all three platforms. Every runner is a
-# throwaway VM, and every step runs against an empty fake home with the tools
-# absent from PATH, so "it works on my machine" cannot hide anything here.
+# Models a brand-new student computer on all three platforms. Every runner is a throwaway
+# machine, and kmc runs in an empty folder with an empty sign-in home, so "it works on my
+# machine" cannot hide anything here. What it cannot cover is the emailed code: nobody
+# reads an inbox on a runner, so the sign-in itself is proved by hand.
 
 on:
   push:
   workflow_dispatch:
+
+env:
+  SKILL: plugins/boss-install/skills/install-my-boss/SKILL.md
+  KMC_URL: https://kmc-os-server.vercel.app/kmc
 
 jobs:
   install-path:
@@ -15,178 +20,106 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macos-13 is being retired by GitHub; its runners no longer pick up
-        # these jobs, so every run came back "cancelled" while the other three
-        # passed 11/11. A red page that means nothing is worse than no page.
-        # Deliberately spread across ages and architectures, not just "latest".
-        # macos-15 is Apple silicon, macos-14 covers the older Sonoma runners,
-        # windows-2022 is what a machine bought a few years ago still runs, and
-        # ubuntu-22.04 stands in for older Linux and Chromebook containers.
+        # Spread across ages and architectures, not just "latest": macos-15 is Apple
+        # silicon, macos-14 covers older Sonoma machines, windows-2022 is what a computer
+        # bought a few years ago still runs, ubuntu-22.04 stands in for older Linux and
+        # Chromebook containers.
         os: [ubuntu-latest, ubuntu-22.04, macos-latest, macos-15, macos-14,
              windows-latest, windows-2022]
     steps:
       - uses: actions/checkout@v4
 
-      - name: Detect the machine, the way the skill does
+      - name: The download address in the skill is the real one, and answers
         shell: bash
         run: |
-          case "$(uname -s)" in
-            Darwin) OS=macOS ;;
-            Linux)  OS=linux ;;
-            MINGW*|MSYS*|CYGWIN*) OS=windows ;;
-          esac
-          case "$(uname -m)" in
-            arm64|aarch64) ARCH=arm64 ;;
-            x86_64)        ARCH=amd64 ;;
-          esac
-          echo "OS=$OS" >> "$GITHUB_ENV"
-          echo "ARCH=$ARCH" >> "$GITHUB_ENV"
-          echo "resolved: $OS/$ARCH   (raw: $(uname -s) $(uname -m))"
-          [ -n "$OS" ] && [ -n "$ARCH" ] || { echo "::error::detection produced an empty OS or ARCH"; exit 1; }
+          grep -q "$KMC_URL" "$SKILL" || { echo "::error::the skill no longer names $KMC_URL"; exit 1; }
+          C=$(curl -s -o /dev/null -w '%{http_code}' "$KMC_URL")
+          [ "$C" = 200 ] || { echo "::error::$KMC_URL answered HTTP $C"; exit 1; }
+          echo "kmc is served: HTTP $C"
 
-      - name: Install the GitHub tool into an empty home, no admin
+      - name: Bring kmc down into an empty BOSS-OS folder and run it, as the skill does
         shell: bash
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
         run: |
+          set -u
+          HOME_DIR="$RUNNER_TEMP/student"
+          FOLDER="$HOME_DIR/Sites/BOSS-OS"
+          mkdir -p "$FOLDER"
+          cd "$FOLDER"
+          # Windows: the skill uses curl.exe, which ships with Windows 10 and 11.
+          if [ "$RUNNER_OS" = Windows ]; then curl.exe -fsSL -o kmc "$KMC_URL"; else curl -fsSL -o kmc "$KMC_URL"; fi
+          set +e
+          OUT=$(KMCOS_HOME="$HOME_DIR/.kmc-os" bash kmc whoami 2>&1); CODE=$?
           set -e
-          FAKE="$RUNNER_TEMP/fakehome"
-          mkdir -p "$FAKE/.local/bin"
-          EXT=zip; [ "$OS" = linux ] && EXT=tar.gz
-          # Authenticate the lookup. Unauthenticated it is 60/hour per IP and the
-          # hosted runners share egress addresses, so this flakes on a green skill.
-          # The skill itself has to survive the unauthenticated case; that is its
-          # retry-and-fallback rule, not something this test should mask.
-          URL=$(curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" \
-            https://api.github.com/repos/cli/cli/releases/latest \
-            | grep -o "\"browser_download_url\": *\"[^\"]*${OS}_${ARCH}\.${EXT}\"" \
-            | head -1 | sed 's/.*"\(https[^"]*\)"$/\1/')
-          [ -n "$URL" ] || { echo "::error::no release asset for ${OS}_${ARCH}.${EXT}"; exit 1; }
-          echo "asset: $(basename "$URL")"
-          curl -fsSL -o "$RUNNER_TEMP/gh.$EXT" "$URL"
-          if [ "$EXT" = zip ]; then unzip -q "$RUNNER_TEMP/gh.$EXT" -d "$RUNNER_TEMP/un"
-          else mkdir -p "$RUNNER_TEMP/un" && tar -xzf "$RUNNER_TEMP/gh.$EXT" -C "$RUNNER_TEMP/un"; fi
-          BIN=$(find "$RUNNER_TEMP/un" -type f \( -name gh -o -name gh.exe \) | head -1)
-          [ -n "$BIN" ] || { echo "::error::no gh binary inside the archive"; exit 1; }
-          cp "$BIN" "$FAKE/.local/bin/"
-          chmod +x "$FAKE/.local/bin/"* || true
-          echo "FAKE=$FAKE" >> "$GITHUB_ENV"
-          echo "installed into an empty home with no elevation"
-
-      - name: It must actually RUN, not merely exist
-        shell: bash
-        run: |
-          GH="$FAKE/.local/bin/gh"; [ -f "$GH.exe" ] && GH="$GH.exe"
-          "$GH" --version || { echo "::error::installed but will not run"; exit 1; }
-
-      - name: The PATH gap the skill has to handle
-        shell: bash
-        run: |
-          # Regression guard for the bug found on 2026-09-17: the tool installs
-          # correctly and the shell still cannot find it by name. The skill must
-          # call it by full path and must never assume a bare `gh` resolves.
-          if env -u PATH PATH="/usr/bin:/bin" sh -c 'command -v gh' >/dev/null 2>&1; then
-            echo "note: a system gh exists on this runner, so the bare-name check is not meaningful here"
-          else
-            echo "confirmed: bare 'gh' does not resolve from a default PATH after a home-dir install"
-          fi
-          echo "full path works: $("$FAKE/.local/bin/gh" --version 2>/dev/null | head -1 || "$FAKE/.local/bin/gh.exe" --version | head -1)"
+          echo "$OUT"
+          echo "exit $CODE"
+          # First run: it moves itself into .claude/scripts and says this computer is not
+          # signed in (exit 4). Anything else on a fresh machine is a broken install.
+          [ -f .claude/scripts/kmc ] || { echo "::error::kmc did not move itself to .claude/scripts/kmc"; exit 1; }
+          [ ! -f kmc ] || { echo "::error::kmc left a copy in the folder root"; exit 1; }
+          [ "$CODE" = 4 ] || { echo "::error::expected 'not signed in' (exit 4), got exit $CODE"; exit 1; }
+          echo "$OUT" | grep -q "isn't signed in" || { echo "::error::kmc did not say this computer isn't signed in"; exit 1; }
+          # And from its real place, the way every later step runs it.
+          set +e
+          KMCOS_HOME="$HOME_DIR/.kmc-os" bash .claude/scripts/kmc whoami > /dev/null 2>&1; AGAIN=$?
+          set -e
+          [ "$AGAIN" = 4 ] || { echo "::error::kmc from .claude/scripts answered exit $AGAIN"; exit 1; }
+          echo "kmc runs on $RUNNER_OS from an empty folder, and asks for a sign-in"
 
       - name: Manifests must be valid on every platform
         shell: bash
         run: |
-          python3 -c "import json;[json.load(open(p)) for p in ['.claude-plugin/marketplace.json','plugins/boss-pre-setup/.claude-plugin/plugin.json']];print('manifests parse')"
-          test -f plugins/boss-pre-setup/skills/set-up-my-computer/SKILL.md || { echo "::error::skill missing"; exit 1; }
+          python3 -c "import json;[json.load(open(p)) for p in ['.claude-plugin/marketplace.json','plugins/boss-install/.claude-plugin/plugin.json']];print('manifests parse')"
+          test -f "$SKILL" || { echo "::error::skill missing"; exit 1; }
+          grep -q '^name: install-my-boss$' "$SKILL" || { echo "::error::skill name changed"; exit 1; }
+
+  rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
       - name: No admin, no password, anywhere in the skill
-        shell: bash
         run: |
-          S=plugins/boss-pre-setup/skills/set-up-my-computer/SKILL.md
           FAIL=0
-          # Look for the tokens used as INSTRUCTIONS, not merely mentioned. The
-          # skill's banned-vocabulary list names "Homebrew" and "sudo" precisely
-          # so they are never said to a student, and a bare grep reads that
-          # prohibition as a violation. Match command-shaped usage instead.
-          if grep -nE '(^|[`( ])sudo [a-z]' "$S"; then
-            echo "::error::skill appears to invoke sudo"; FAIL=1
-          fi
-          if grep -nE 'brew install|install Homebrew|via Homebrew|using Homebrew' "$S"; then
-            echo "::error::skill appears to route through Homebrew"; FAIL=1
-          fi
-          if grep -niE 'ask (them |the student )?for (their )?(computer |login )?password' "$S" \
-             | grep -viE 'never|do not|don.t'; then
-            echo "::error::skill appears to ask for a password"; FAIL=1
-          fi
-          [ $FAIL -eq 0 ] && echo "clean: no sudo, no Homebrew, no password request"
+          # Instructions, not mentions: the skill names Homebrew and sudo to forbid them.
+          if grep -nE '(^|[`( ])sudo [a-z]' "$SKILL"; then echo "::error::skill appears to invoke sudo"; FAIL=1; fi
+          if grep -nE 'brew install|install Homebrew|via Homebrew|using Homebrew' "$SKILL"; then
+            echo "::error::skill appears to route through Homebrew"; FAIL=1; fi
+          if grep -niE 'ask (them |her |the student )?for (their |her )?(computer |login )?password' "$SKILL" \
+             | grep -viE 'never|do not|don.t'; then echo "::error::skill appears to ask for a password"; FAIL=1; fi
+          grep -q 'Homebrew is never the answer' "$SKILL" || { echo "::error::the no-Homebrew statement was removed"; FAIL=1; }
           exit $FAIL
 
-      - name: The pinned fallback must work when the lookup is unavailable
-        shell: bash
+      - name: GitHub is gone from the install, and stays gone
         run: |
-          # Added 2026-09-25. The old instruction was to fall back to "whichever
-          # package manager is already on the machine", which on a Mac with no
-          # Homebrew is a dead end with no next step - the real failure a student
-          # hit. The fallback is now a pinned address, and it has to resolve and
-          # RUN on every platform, with no lookup and no package manager.
-          PIN=$(grep -oE 'https://github\.com/cli/cli/releases/download/v[0-9.]+/gh_[0-9.]+_macOS_arm64\.zip' \
-                plugins/boss-pre-setup/skills/set-up-my-computer/SKILL.md | head -1)
-          [ -n "$PIN" ] || { echo "::error::no pinned fallback address found in the skill"; exit 1; }
-          VER=$(echo "$PIN" | sed -E 's|.*/download/v([0-9.]+)/.*|\1|')
-          EXT=zip; [ "$OS" = linux ] && EXT=tar.gz
-          URL="https://github.com/cli/cli/releases/download/v${VER}/gh_${VER}_${OS}_${ARCH}.${EXT}"
-          echo "pinned v$VER -> $URL"
-          C=$(curl -s -o /dev/null -w '%{http_code}' -L "$URL")
-          [ "$C" = "200" ] || { echo "::error::pinned fallback returned HTTP $C"; exit 1; }
-          # and prove it installs and runs with no lookup, no package manager
-          FB="$RUNNER_TEMP/fb"; mkdir -p "$FB/bin"
-          curl -fsSL -o "$RUNNER_TEMP/fb.$EXT" "$URL"
-          if [ "$EXT" = zip ]; then unzip -q "$RUNNER_TEMP/fb.$EXT" -d "$FB/un"
-          else mkdir -p "$FB/un" && tar -xzf "$RUNNER_TEMP/fb.$EXT" -C "$FB/un"; fi
-          FBIN=$(find "$FB/un" -type f \( -name gh -o -name gh.exe \) | head -1)
-          [ -n "$FBIN" ] || { echo "::error::no gh inside the pinned archive"; exit 1; }
-          cp "$FBIN" "$FB/bin/"; chmod +x "$FB/bin/"* || true
-          G="$FB/bin/gh"; [ -f "$G.exe" ] && G="$G.exe"
-          "$G" --version || { echo "::error::pinned fallback installed but will not run"; exit 1; }
-          echo "pinned fallback works on $OS/$ARCH with no package manager"
-
-      - name: The dead end must stay gone
-        shell: bash
-        run: |
-          S=plugins/boss-pre-setup/skills/set-up-my-computer/SKILL.md
-          if grep -n 'fall back to whichever package manager' "$S"; then
-            echo "::error::the package-manager dead end is back"; exit 1
-          fi
-          grep -q 'Homebrew is never the answer' "$S" \
-            || { echo "::error::the no-Homebrew statement was removed"; exit 1; }
-          echo "clean: no package-manager fallback, no-Homebrew rule stated"
+          # The point of this install. The skill may say GitHub is not used; it must never
+          # install the GitHub tool, sign anyone in to GitHub, or hand out the old form.
+          FAIL=0
+          if grep -nE 'gh auth|GitHub\.cli|cli/cli/releases|github\.com/login/device|/get-boss|Bash\(gh:' "$SKILL"; then
+            echo "::error::the GitHub sign-in or the form is back in the skill"; FAIL=1; fi
+          grep -q 'Never use GitHub, a GitHub account, a form or an invitation' "$SKILL" \
+            || { echo "::error::the no-GitHub rule was removed"; FAIL=1; }
+          exit $FAIL
 
       - name: Copy blocks must never be language-tagged
-        shell: bash
         run: |
-          # A ```bash block gets a Run button in the desktop app. The sign-in code
-          # and the username are displayed in fenced blocks so they get a COPY
-          # button; tagging one turns a student's own login code into something
-          # she can click Run on.
-          S=plugins/boss-pre-setup/skills/set-up-my-computer/SKILL.md
-          if grep -nE '^\s*```(bash|sh|shell|console)\s*$' "$S"; then
-            echo "::error::a language-tagged fence exists; it would render a Run button"; exit 1
-          fi
-          grep -q 'copy button on the right of this box' "$S" \
-            || { echo "::error::the copy-button presentation was removed"; exit 1; }
-          grep -q 'https://github.com/login/device' "$S" \
-            || { echo "::error::the device link lost its https scheme"; exit 1; }
-          echo "clean: no tagged fences, copy blocks and clickable links present"
+          # A ```bash block gets a Run button in the desktop app. The folder path is shown in
+          # a fenced block so it gets a COPY button; tagging it makes it something to Run.
+          if grep -nE '^\s*```(bash|sh|shell|console|powershell)\s*$' "$SKILL"; then
+            echo "::error::a language-tagged fence exists; it would render a Run button"; exit 1; fi
+          grep -q 'Never tag that block' "$SKILL" || { echo "::error::the untagged-path rule was removed"; exit 1; }
 
-      - name: The invented URL must stay dead (regression guard)
-        shell: bash
+      - name: The handoff opens her folder, in place, and runs the setup there
         run: |
-          # A rehearsal invented releases/latest/download/gh_<os>_<arch>.<ext>.
-          # No such file exists - the real name carries the version. If this ever
-          # starts returning 200, the skill's "resolve, never construct" rule can
-          # be revisited. Until then, constructing the address is a 404.
-          for E in zip tar.gz; do
-            C=$(curl -s -o /dev/null -w '%{http_code}' -L \
-              "https://github.com/cli/cli/releases/latest/download/gh_${OS}_${ARCH}.$E")
-            echo "  gh_${OS}_${ARCH}.$E -> HTTP $C"
-            [ "$C" = "404" ] || { echo "::error::constructed URL unexpectedly resolved"; exit 1; }
-          done
+          FAIL=0
+          grep -q 'use_worktree: false' "$SKILL" || { echo "::error::the handoff no longer keeps her folder in place"; FAIL=1; }
+          grep -q '`set up my OS`' "$SKILL" || { echo "::error::the handoff no longer starts set up my OS"; FAIL=1; }
+          grep -q 'Never start her setup in this session' "$SKILL" || { echo "::error::the stop-here rule was removed"; FAIL=1; }
+          exit $FAIL
+
+      - name: Nobody is routed to office hours, a coach or the academy
+        run: |
+          # Students who install this way are not all in the Academy (Jerry, 2026-11-19). Help
+          # ends on bosssupport@kristamashore.com.
+          if grep -niE 'office hours|group call|facebook group|your coach|academy' "$SKILL"; then
+            echo "::error::the skill routes students somewhere not every student has"; exit 1; fi
+          grep -q 'bosssupport@kristamashore.com' "$SKILL" || { echo "::error::the support address is gone"; exit 1; }
