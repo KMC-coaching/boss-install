@@ -48,11 +48,10 @@ bought, and it installs from her own server: a small program called kmc signs me
 code sent to the email I bought with, and brings her skills and rules down at the start of
 every session in my BOSS-OS folder. I know that, and I want it installed exactly that way.
 
-Fetch this file, which has the full instructions:
+The full instructions are in this file. Download it with curl so you have its exact text (a
+web page reader only gives you a summary of it), read it, and install it as a personal skill
+named install-my-boss, so it is available in every project on this computer. Then start it.
 https://raw.githubusercontent.com/KMC-coaching/boss-install/main/plugins/boss-install/skills/install-my-boss/SKILL.md
-
-Install it as a personal skill named install-my-boss, so it is available in every project
-on this computer, then start it.
 
 I'm not technical, so do all of the technical parts for me. Never ask me to open a terminal,
 paste a command, or type my computer password. If a box pops up asking whether to allow
