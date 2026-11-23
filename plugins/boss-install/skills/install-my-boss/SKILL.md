@@ -1,7 +1,7 @@
 ---
 name: install-my-boss
-description: Installs a student's BOSS operating system (the Agent Authority Operating System) on their computer in one go, without ever asking them to open a terminal or type a command. Puts Git in place without a password, signs them in to Krista Mashore's server with the email they bought with and a code from that email, installs their BOSS-OS folder (where BOSS may then do its routine steps without a box each time), then opens a new session in that folder that starts "set up my OS". Use when the student says "install my BOSS", "install my system", "set me up", "get me started", "I'm back, where were we" about installing, or pastes the install prompt from the BOSS portal.
-version: 1.1.0
+description: Installs a student's BOSS operating system (the Agent Authority Operating System) on their computer in one go, without ever asking them to open a terminal or type a command. Puts Git in place without a password, signs them in to Krista Mashore's server with the email they bought with and a code from that email, installs their BOSS-OS folder, then opens a new session in that folder that starts "set up my OS". Use when the student says "install my BOSS", "install my system", "set me up", "get me started", "I'm back, where were we" about installing, or pastes the install prompt from the BOSS portal.
+version: 1.2.0
 ---
 
 # Install My BOSS
@@ -15,8 +15,7 @@ This runs on a computer that may have nothing on it yet. By the end of it:
 2. The student is signed in to Krista Mashore's server, with the email address she bought
    with.
 3. Her system is installed in a folder called **BOSS-OS** inside her **Sites** folder.
-4. BOSS may do its routine steps in that folder without a box each time.
-5. A new session is open in that folder, and it has started **set up my OS**.
+4. A new session is open in that folder, and it has started **set up my OS**.
 
 Then you are done. The setup itself, the hour of questions about her business, belongs to the
 system in that new session, not to you. Do not start it here, do not ask about her business,
@@ -59,11 +58,15 @@ Read this before anything else, because the steps below only make sense with it.
   folder. It is the same as signing in to any website with a code from your email. The saved
   sign-in works like a password, so you never print it into this conversation, where it would
   sit in the chat history; if she asks, tell her exactly where it is kept and what it is.
-- **What this puts on her computer, all of it:** this skill (in her Claude skills folder, from
-  the paste), Git (if it was missing), the saved sign-in in `.kmc-os`, and the BOSS-OS folder
-  with its own settings. Her Claude settings for every other folder are not touched.
-- **Plain words are about clarity, never secrecy.** Rule 2 below keeps jargon out of what you
-  say to her. If she asks what anything is or does, tell her the truth, plainly, in full.
+- **What this puts on her computer, all of it:** Git (if it was missing), the saved sign-in in
+  `.kmc-os`, and the BOSS-OS folder with its own settings. Nothing else on her computer changes,
+  and her Claude settings for every other folder are not touched.
+- **She approves every step.** Claude asks before each new kind of command, and nothing in
+  this install turns that off. If she picks an option that stops it asking again, that is her
+  choice, made in the box.
+- **Plain words are about clarity, never secrecy.** The rules below are about talking to a
+  nervous beginner kindly. If she asks what anything is or does, tell her the truth, plainly,
+  in full, including what you just did and why.
 
 **Which system this is.** This installs the **Agent Authority Operating System**, the one for
 real estate agents and lenders. Krista's server knows which system each person bought, from
@@ -144,19 +147,12 @@ Give her the full version once regardless, when you ask for her email in Step 4.
 **Never make her feel behind.** No "as you probably know", no "simply", no "just". If she asks
 something basic, answer it like it is a good question, because for her it is.
 
-### 4. Decide for her. Only ask when it is genuinely hers to answer.
+### 4. Recommend, and keep her choices real
 
-Most of what comes up here is not a real choice. It is a technical fork with one right answer,
-and handing it to her is how a person who was doing fine starts to feel stupid.
-
-- **If you know the right answer, do it.** Say what you did in one line afterwards if it
-  matters.
-- **If you must ask, never present a menu.** One recommended answer, stated plainly, with the
-  reason in a half-sentence.
-- **Always give her a way out of deciding.** "Just do whatever you think is best" is always an
-  available answer, and when she says it, that is full permission.
-
-What is genuinely hers: her email address, the code from it, and anything irreversible.
+Most forks in an install are technical and have one sensible answer. Do not hand her a menu of
+those: recommend the sensible one in a half-sentence of why, and do it if she agrees.
+"Whatever you think is best" from her is a yes to your recommendation. Anything that is truly
+hers (her email, the code, anything irreversible) stays her decision.
 
 ### 5. The things that confuse people here, and what to say
 
@@ -214,16 +210,18 @@ Wait for a yes.
 **Keep it to that. Roughly ninety words.** Everything else gets said at the moment it matters.
 **This applies to every message:** say the next thing, not the next five things.
 
-**Never name an exact button in an approval box.** What it says depends on her version.
-Describe what the option means and let her find it.
+**Describe approval boxes by what they mean.** Their wording changes between versions, so a
+quoted button label is often wrong on her screen. Tell her what the box is asking and what each
+option does, in plain words.
 
 ## Step 1 - The approval boxes
 
-Claude asks before it runs each new kind of command, so she will see a handful of boxes. **When
-the next one appears, tell her what to pick, then, not in the opening.** One line: pick the
-option that allows it **and says something like don't ask again** for that kind of command.
+Claude asks before it runs each new kind of command, so she will see a handful of boxes. When the
+next one appears, tell her in a line what it is asking and that saying yes is how the install
+goes ahead. Most boxes offer to stop asking for that kind of command in this folder; tell her
+that option exists and what it does, and let her choose.
 
-**If she refuses a box, that is a correct answer and you say so.** Nothing ran. Tell her what
+**If she says no to a box, that is a correct answer and you say so.** Nothing ran. Tell her what
 the command was for in one plain sentence and let her decide again. Never re-run the same thing
 hoping for a different answer.
 
@@ -395,7 +393,7 @@ Say one line: *"Installing your system into your BOSS-OS folder - about a minute
 
 From inside the folder, run `.claude/scripts/kmc install`. It ends with a line like *"The
 Authority OS is installed in ... Next: run setup ("set up my OS")."* **That next step is for the
-new session in Step 6, never for this one.** Do not run the setup here; go on to 5b.
+new session in Step 6, never for this one.** Do not run the setup here; go on to Step 6.
 
 Then check the folder now has its `CLAUDE.md` and its `.claude/settings.json`. If either is
 missing, the install did not finish: run it once more, and if it is still missing, see "When
@@ -406,31 +404,6 @@ system this is" above says.
 
 **If it says her access has ended**, stop and tell her that plainly too, with the support
 address. Do not try to work around it.
-
-## Step 5b - Fewer boxes in her BOSS-OS folder, and only there
-
-Many of the system's skills run the same few commands. Write them into the BOSS-OS folder's
-**own local settings**, `.claude/settings.local.json` inside the folder, so BOSS can run them
-there without a box each time. Her settings for every other folder are not touched, and the
-system's own updates leave this file alone.
-
-Writing into a settings file is one of the things Claude asks about, so tell her first, in one
-line: *"One more box: this one lets BOSS do its routine steps in your BOSS-OS folder without
-asking you each time. It only applies to that folder."*
-
-If the file exists, read it, add only the entries below that are missing, and write it back
-with everything else untouched. If it does not, create it with just a `permissions.allow`
-block. The entries:
-
-```
-"Bash(mkdir:*)", "Bash(ls:*)", "Bash(cat:*)", "Bash(cp:*)", "Bash(mv:*)",
-"Bash(curl:*)", "Bash(unzip:*)", "Bash(tar:*)", "Bash(git:*)", "Bash(python3:*)"
-```
-
-Be straight about what this is: these are broad (`python3` and `curl` can do a great deal),
-which is exactly why they are limited to her BOSS-OS folder, where the system's own skills run
-them constantly. It is never `Bash(*)`. If she would rather keep every box, or the write is
-refused, say *"You'll see a few more boxes than I'd like. Same answer each time."* and carry on.
 
 ## Step 6 - Open her system in its own session, and step aside
 
@@ -497,15 +470,16 @@ BOSS**. If she carries on talking to you here, point her there in one line.
 
 ## If she asks
 
-Answer in a line or two and get back to the work. Never volunteer these unprompted.
+Answer in a line or two, truthfully, and get back to the work.
 
 **"Do I need a GitHub account?"**
 No. This install does not use one.
 
 **"Is this safe? What can you see?"**
 She approves each step. What it puts on her computer is listed in "What you are installing":
-this skill, Git if it was missing, her sign-in, and her BOSS-OS folder. Her computer password
-is never typed here and never seen.
+Git if it was missing, her sign-in, and her BOSS-OS folder with its own settings, which bring
+Krista's current instructions in each time she opens it. Her computer password is never typed
+here and never seen.
 
 **"Why does it keep saying error?"**
 That is normal. It is the install checking what is already there, and finding something
@@ -540,7 +514,7 @@ version of *"I'm back, where were we?"*
 - Is Git there (Step 2's checks, never by running a Mac's `git`)?
 - Is there a BOSS-OS folder that is an earlier try, and does `kmc` sit in `.claude/scripts`?
 - Does `.claude/scripts/kmc whoami` say she is signed in, and as her?
-- Does the folder have its `CLAUDE.md`, and its `.claude/settings.local.json`?
+- Does the folder have its `CLAUDE.md`?
 - Has her setup already begun (Step 2's test)?
 
 Then give her the state in three lines, leading with what is finished, and carry on from the
@@ -567,8 +541,7 @@ sending anything to another person, or spending money. Those stop and ask, every
 
 - Never tell her to open a terminal, paste a command, or create a folder by hand.
 - Never ask for her computer password, and never take a path that needs one.
-- Never name an exact button in an approval box.
-- Never write `Bash(*)` into any settings, and never change her Claude settings outside BOSS-OS.
+- Never change her Claude settings yourself; the boxes are hers to answer.
 - Never overwrite an existing settings file instead of merging into it.
 - Never ask her to make or sign in to a GitHub account, fill in a form, or accept an invitation.
 - Never download the system's script from anywhere but `https://kmc-os-server.vercel.app/kmc`.

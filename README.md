@@ -17,7 +17,7 @@ and the student's own work stays in their folder.
 ## For students
 
 Paste the install prompt from the BOSS portal into Claude (the desktop app, Code tab, a new
-session set to Local). It fetches this skill and runs it. Or install this plugin and say:
+session set to Local). It downloads this skill's instructions and follows them. Or install this plugin and say:
 
 > install my BOSS
 
@@ -49,9 +49,10 @@ bought, and it installs from her own server: a small program called kmc signs me
 code sent to the email I bought with, and brings her skills and rules down at the start of
 every session in my BOSS-OS folder. I know that, and I want it installed exactly that way.
 
-The full instructions are in this file. Download it with curl (curl.exe on Windows) so you
-have its exact text (a web page reader only gives you a summary of it), read it, and install it as a personal skill
-named install-my-boss, so it is available in every project on this computer. Then start it.
+The full install steps are in this file. Download it with curl (curl.exe on Windows) so you
+have its exact text (a web page reader only gives you a summary of it), then read it and
+follow it.
+
 https://raw.githubusercontent.com/KMC-coaching/boss-install/main/plugins/boss-install/skills/install-my-boss/SKILL.md
 
 I'm not technical, so do all of the technical parts for me. Never ask me to open a terminal,
