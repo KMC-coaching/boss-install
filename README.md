@@ -22,6 +22,14 @@ then:
    Where the app cannot open sessions, Claude tells the student the folder and the one thing
    to type there.
 
+**The Non-Agent Authority Operating System** has its own paste,
+[`install-prompt-authority.txt`](install-prompt-authority.txt), and nobody edits it:
+[`make-prompts.sh`](make-prompts.sh) writes it from `install-prompt.txt` with three changes,
+the product's name, the kmc it downloads (`/kmc/coach`, the coaches' kit) and the folder
+(`~/Sites/BOSS-Authority-OS`, so it never lands in an agent `BOSS-OS` folder). Edit
+`install-prompt.txt`, run `./make-prompts.sh`, and commit both; CI fails if the two differ by
+anything else. Every check below runs on both pastes.
+
 It replaces [`boss-pre-setup`](https://github.com/KMC-coaching/boss-pre-setup) (computer
 setup, GitHub sign-in, then a form and an invitation to a private repository). That repo is
 left exactly as it was, for anyone partway through the older install.

@@ -13,17 +13,27 @@ on:
   schedule:
     - cron: "17 12 * * *"
 
+# Two pastes, one per operating system: install-prompt.txt (the Agent Authority OS) and
+# install-prompt-authority.txt (the Non-Agent one), which make-prompts.sh writes from it. Every
+# check runs on both, each with its own kmc address and folder.
 env:
-  PROMPT: install-prompt.txt
-  KMC_URL: https://kmc-os-server.vercel.app/kmc
+  PASTES: install-prompt.txt install-prompt-authority.txt
 
 jobs:
   install-path:
-    name: ${{ matrix.os }}
+    name: ${{ matrix.os }} · ${{ matrix.paste.folder }}
     runs-on: ${{ matrix.os }}
+    env:
+      PROMPT: ${{ matrix.paste.prompt }}
+      KMC_URL: ${{ matrix.paste.url }}
+      FOLDER_NAME: ${{ matrix.paste.folder }}
+      KIT: ${{ matrix.paste.kit }}
     strategy:
       fail-fast: false
       matrix:
+        paste:
+          - { prompt: install-prompt.txt, url: "https://kmc-os-server.vercel.app/kmc", folder: BOSS-OS, kit: agent }
+          - { prompt: install-prompt-authority.txt, url: "https://kmc-os-server.vercel.app/kmc/coach", folder: BOSS-Authority-OS, kit: coach }
         # Spread across ages and architectures, not just "latest": macos-15 is Apple
         # silicon (macos-14 was dropped on 2026-11-23: GitHub no longer runs it, and a red
         # job that means nothing is worse than none), windows-2022 is what a computer
@@ -40,14 +50,16 @@ jobs:
           grep -q "$KMC_URL" "$PROMPT" || { echo "::error::the paste no longer names $KMC_URL"; exit 1; }
           C=$(curl -s -o /dev/null -w '%{http_code}' "$KMC_URL")
           [ "$C" = 200 ] || { echo "::error::$KMC_URL answered HTTP $C"; exit 1; }
-          echo "kmc is served: HTTP $C"
+          # And it is that system's kmc: the Non-Agent paste must never install the agent kit.
+          curl -fsSL "$KMC_URL" | grep -q "KMCOS_KIT:-$KIT}" || { echo "::error::$KMC_URL is not the $KIT kit's kmc"; exit 1; }
+          echo "kmc is served: HTTP $C, the $KIT kit's"
 
-      - name: Bring kmc down into an empty BOSS-OS folder and run it, as the paste does
+      - name: Bring kmc down into an empty folder and run it, as the paste does
         shell: bash
         run: |
           set -u
           HOME_DIR="$RUNNER_TEMP/student"
-          FOLDER="$HOME_DIR/Sites/BOSS-OS"
+          FOLDER="$HOME_DIR/Sites/$FOLDER_NAME"
           mkdir -p "$FOLDER"
           cd "$FOLDER"
           # Windows: the skill uses curl.exe, which ships with Windows 10 and 11.
@@ -75,7 +87,7 @@ jobs:
         run: |
           set -u
           HOME_DIR="$RUNNER_TEMP/student"
-          KMC="$HOME_DIR/Sites/BOSS-OS/.claude/scripts/kmc"
+          KMC="$HOME_DIR/Sites/$FOLDER_NAME/.claude/scripts/kmc"
           # Asking for a code: what to do if it never arrives (the server sends nothing to an
           # address without access, and says so the same way either way).
           OUT=$(KMCOS_HOME="$HOME_DIR/.kmc-os" bash "$KMC" login ci-fresh-machine@example.com 2>&1); CODE=$?
@@ -84,7 +96,7 @@ jobs:
           echo "$OUT" | grep -q "check their spam folder" || { echo "::error::no spam advice after asking for a code"; exit 1; }
           echo "$OUT" | grep -q "bosssupport@kristamashore.com" || { echo "::error::no support address after asking for a code"; exit 1; }
           # A folder that already holds someone's things: nothing is installed, and the AI asks.
-          BUSY="$RUNNER_TEMP/busy/Sites/BOSS-OS"
+          BUSY="$RUNNER_TEMP/busy/Sites/$FOLDER_NAME"
           mkdir -p "$BUSY/.claude/scripts" && cp "$KMC" "$BUSY/.claude/scripts/kmc" && echo notes > "$BUSY/My Notes.txt"
           set +e
           OUT=$(cd "$BUSY" && KMCOS_HOME="$HOME_DIR/.kmc-os" bash .claude/scripts/kmc install 2>&1); CODE=$?
@@ -103,7 +115,7 @@ jobs:
           # If Claude runs PowerShell: curl.exe (plain curl is something else in PowerShell), and Git's own bash
           # found beside git.exe, then Program Files, then the per-user place; never a bare
           # bash, which on Windows can be WSL's.
-          $folder = Join-Path $env:RUNNER_TEMP "ps-student\Sites\BOSS-OS"
+          $folder = Join-Path $env:RUNNER_TEMP "ps-student\Sites\$env:FOLDER_NAME"
           New-Item -ItemType Directory -Force -Path $folder | Out-Null
           Set-Location $folder
           curl.exe -fsSL -o kmc $env:KMC_URL
@@ -127,8 +139,30 @@ jobs:
           exit 0
 
 
-  rules:
+  generated:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: The Non-Agent paste is exactly what make-prompts.sh writes from the agent one
+        run: |
+          ./make-prompts.sh
+          git diff --exit-code install-prompt-authority.txt \
+            || { echo "::error::install-prompt-authority.txt was edited by hand, or not regenerated: edit install-prompt.txt and run make-prompts.sh"; exit 1; }
+
+  rules:
+    name: rules · ${{ matrix.paste.folder }}
+    runs-on: ubuntu-latest
+    env:
+      PROMPT: ${{ matrix.paste.prompt }}
+      KMC_URL: ${{ matrix.paste.url }}
+      FOLDER_NAME: ${{ matrix.paste.folder }}
+      KIT: ${{ matrix.paste.kit }}
+    strategy:
+      fail-fast: false
+      matrix:
+        paste:
+          - { prompt: install-prompt.txt, url: "https://kmc-os-server.vercel.app/kmc", folder: BOSS-OS, kit: agent }
+          - { prompt: install-prompt-authority.txt, url: "https://kmc-os-server.vercel.app/kmc/coach", folder: BOSS-Authority-OS, kit: coach }
     steps:
       - uses: actions/checkout@v4
 
@@ -136,16 +170,16 @@ jobs:
         run: |
           FAIL=0
           need() { grep -qF "$1" "$PROMPT" || { echo "::error::the paste lost: $1"; FAIL=1; }; }
-          need "BOSS-OS inside my Sites folder"
-          need "$KMC_URL"
+          need "$FOLDER_NAME inside my Sites folder"
+          need "$KMC_URL into it"
           need "bash kmc whoami"
           need "kmc login"
           need "the email address I bought with"
           need "kmc install"
-          need "Start a new session in that BOSS-OS folder itself, not a copy of it"
+          need "Start a new session in that $FOLDER_NAME folder itself, not a copy of it"
           need "bring it up on my screen"
           need "named Set up my BOSS"
-          need "If BOSS-OS is already there, use it"
+          need "If $FOLDER_NAME is already there, use it"
           need "I am asking you to start it"
           need "curl -fsSL"
           need "set up my OS"
