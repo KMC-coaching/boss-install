@@ -117,7 +117,7 @@ jobs:
           # If Claude runs PowerShell: curl.exe (plain curl is something else in PowerShell), and Git's own bash
           # found beside git.exe, then Program Files, then the per-user place; never a bare
           # bash, which on Windows can be WSL's.
-          $folder = Join-Path $env:RUNNER_TEMP "ps-student\Sites\$env:FOLDER_NAME"
+          $folder = Join-Path $env:RUNNER_TEMP "Mary Ann\Sites\$env:FOLDER_NAME"
           New-Item -ItemType Directory -Force -Path $folder | Out-Null
           Set-Location $folder
           curl.exe -fsSL -o kmc $env:KMC_URL
@@ -128,7 +128,7 @@ jobs:
           foreach ($c in @("$env:ProgramFiles\Git\bin\bash.exe", "$env:LOCALAPPDATA\Programs\Git\bin\bash.exe")) { if (-not $bash -and (Test-Path $c)) { $bash = $c } }
           if (-not $bash) { Write-Error "no Git bash found the way the skill looks for it"; exit 1 }
           Write-Output "Git's bash: $bash"
-          $env:KMCOS_HOME = Join-Path $env:RUNNER_TEMP "ps-student\.kmc-os"
+          $env:KMCOS_HOME = Join-Path $env:RUNNER_TEMP "Mary Ann\.kmc-os"
           $out = & $bash kmc whoami 2>&1
           $code = $LASTEXITCODE
           Write-Output $out
@@ -136,7 +136,9 @@ jobs:
           if (-not (Test-Path ".claude\scripts\kmc")) { Write-Error "kmc did not move itself into place"; exit 1 }
           & $bash .claude/scripts/kmc whoami *> $null
           if ($LASTEXITCODE -ne 4) { Write-Error "kmc from .claude/scripts answered exit $LASTEXITCODE"; exit 1 }
-          Write-Output "kmc runs from PowerShell through Git's bash, with a path that has a space in it"
+          # A Windows username with a space in it ("Mary Ann") puts one in every path below the home folder.
+          if (-not ((Get-Location).Path -like "* *")) { Write-Error "the test folder has no space in its path"; exit 1 }
+          Write-Output "kmc runs from PowerShell through Git's bash, with a path that has a space in it: $((Get-Location).Path)"
           # kmc's own "not signed in" (4) is still in $LASTEXITCODE, which the runner would report.
           exit 0
 
