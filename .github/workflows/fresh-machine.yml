@@ -51,7 +51,9 @@ jobs:
           C=$(curl -s -o /dev/null -w '%{http_code}' "$KMC_URL")
           [ "$C" = 200 ] || { echo "::error::$KMC_URL answered HTTP $C"; exit 1; }
           # And it is that system's kmc: the Non-Agent paste must never install the agent kit.
-          curl -fsSL "$KMC_URL" | grep -q "KMCOS_KIT:-$KIT}" || { echo "::error::$KMC_URL is not the $KIT kit's kmc"; exit 1; }
+          # Saved first: grep -q stops reading early, and under pipefail curl's broken pipe fails the step.
+          BODY=$(curl -fsSL "$KMC_URL")
+          grep -qF "KMCOS_KIT:-$KIT}" <<< "$BODY" || { echo "::error::$KMC_URL is not the $KIT kit's kmc"; exit 1; }
           echo "kmc is served: HTTP $C, the $KIT kit's"
 
       - name: Bring kmc down into an empty folder and run it, as the paste does
